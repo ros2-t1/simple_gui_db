@@ -9,10 +9,10 @@ app = Flask(__name__)
 # 연결 풀 설정
 db_pool = psycopg2.pool.SimpleConnectionPool(
     1, 20,
-    dbname="hana_dev",
+    dbname="hana_db",
     user="postgres",
     password="qwer1234",
-    host="localhost",
+    host="20.249.209.1",
     port="5432"
 )
 
