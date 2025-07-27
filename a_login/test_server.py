@@ -12,7 +12,8 @@ db_pool = psycopg2.pool.SimpleConnectionPool(
     dbname="hana_db",
     user="postgres",
     password="qwer1234",
-    host="20.249.209.1",
+    # host="20.249.209.1", # test server ip
+    host="localhost",  # 로컬 테스트용
     port="5432"
 )
 
