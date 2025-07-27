@@ -34,7 +34,7 @@ class LoginWindow(QWidget):
         password = self.pw_input.text()
 
         try:
-            res = requests.post("http://20.249.209.1:5000/login", json={
+            res = requests.post("http://localhost:8080/login", json={
                 "login_id": login_id,
                 "password": password
             })

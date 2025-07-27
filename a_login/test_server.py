@@ -12,18 +12,14 @@ db_pool = psycopg2.pool.SimpleConnectionPool(
     dbname="hana_db",
     user="postgres",
     password="qwer1234",
-    # host="20.249.209.1", # test server ip
-    host="localhost",  # 로컬 테스트용
+    host="20.249.209.1",
     port="5432"
 )
 
 def get_client_ip():
-    # X-Forwarded-For가 있으면 그걸 사용, 없으면 remote_addr
-    forwarded = request.headers.get("X-Forwarded-For", None)
-    if forwarded:
-        # 여러 IP가 있을 수 있으니 첫 번째 것만 사용
-        return forwarded.split(",")[0].strip()
-    return request.remote_addr
+    if request.environ.get('HTTP_X_FORWARDED_FOR'):
+        return request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0]
+    return request.environ['REMOTE_ADDR']
 
 @contextmanager
 def get_db_connection():
@@ -87,4 +83,4 @@ def login():
         return jsonify({"error": f"데이터베이스 오류: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8080)
