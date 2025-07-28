@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/venv,ros2,flask
 # Edit at https://www.toptal.com/developers/gitignore?templates=venv,ros2,flask
 
+/test
+
 ### Flask ###
 instance/*
 !instance/.gitignore
