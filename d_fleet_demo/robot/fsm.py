@@ -66,25 +66,48 @@ class DeliveryFSM(Node):
             
             if command == "order":
                 if resident_id:
-                    # Update service station coordinates for this delivery
+                    # Update service station coordinates for this delivery/call
                     new_coords = self._get_service_station_coords(resident_id)
                     if new_coords:
                         self.service_station_coords = new_coords
-                        self.get_logger().info(f"Updated delivery target for resident {resident_id}: {new_coords}")
+                        self.get_logger().info(f"Updated target for resident {resident_id}: {new_coords}")
                 
+                # Determine task type (delivery vs call)
+                task_type = cmd_data.get("task_type", "배달")  # Default to delivery
+                
+                if self.step == Step.IDLE:
+                    if task_type == "호출":
+                        # Call task: go directly to user (skip arm/pick)
+                        self.set_step(Step.GO_TO_USER)
+                    else:
+                        # Delivery task: go to arm first
+                        self.set_step(Step.GO_TO_ARM)
+                elif self.step == Step.WAIT_CONFIRM:
+                    # New task assigned immediately after confirm
+                    if task_type == "호출":
+                        self.set_step(Step.GO_TO_USER)
+                    else:
+                        self.set_step(Step.GO_TO_ARM)
+                elif self.step == Step.GO_DOCK:
+                    # Interrupt dock return and start new task immediately
+                    self.get_logger().info(f"Interrupting dock return for new {task_type} task")
+                    if task_type == "호출":
+                        self.set_step(Step.GO_TO_USER)
+                    else:
+                        self.set_step(Step.GO_TO_ARM)
+                    
+        except json.JSONDecodeError:
+            # Fallback to old string format
+            if msg.data == "order":
                 if self.step == Step.IDLE:
                     self.set_step(Step.GO_TO_ARM)
                 elif self.step == Step.WAIT_CONFIRM:
                     # New task assigned immediately after confirm - go directly to arm
                     self.set_step(Step.GO_TO_ARM)
-                    
-        except json.JSONDecodeError:
-            # Fallback to old string format
-            if msg.data == "order" and self.step == Step.IDLE:
-                self.set_step(Step.GO_TO_ARM)
-            elif msg.data == "order" and self.step == Step.WAIT_CONFIRM:
-                # New task assigned immediately after confirm - go directly to arm
-                self.set_step(Step.GO_TO_ARM)
+                elif self.step == Step.GO_DOCK:
+                    # Interrupt dock return and start new task immediately
+                    self.get_logger().info("Interrupting dock return for new task (fallback)")
+                    self.set_step(Step.GO_TO_ARM)
         
         # Handle confirm command (always string format)
         if msg.data == "confirm" and self.step == Step.WAIT_CONFIRM:

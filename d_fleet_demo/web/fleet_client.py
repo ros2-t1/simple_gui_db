@@ -89,6 +89,32 @@ class FleetClient(Node):
         
         return task_id
     
+    def send_call_task(self, resident_id: str, callback: Callable, db_task_id: int = None):
+        """Send call task to fleet manager"""
+        task_id = str(db_task_id) if db_task_id else str(uuid.uuid4())
+        
+        task_data = {
+            'task_id': task_id,
+            'db_task_id': db_task_id,
+            'task_type': 'call',
+            'resident_id': resident_id,
+            'priority': 1
+        }
+        
+        # Store callback for response
+        self.pending_requests[task_id] = callback
+        
+        # Send request
+        msg = String(data=json.dumps(task_data))
+        self.task_request_pub.publish(msg)
+        
+        self.get_logger().info(f"Sent call task: {task_id} (DB ID: {db_task_id})")
+        
+        # Set timeout
+        threading.Timer(self.response_timeout, self._timeout_callback, args=[task_id]).start()
+        
+        return task_id
+    
     def send_confirm_request(self, robot_id: str = 'robot_1'):
         """Send confirmation request to fleet manager"""
         confirm_data = {

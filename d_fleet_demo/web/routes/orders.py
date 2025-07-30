@@ -62,6 +62,51 @@ def place_order():
         return jsonify({"error": str(e)}), 500
 
 
+@bp.route("/call", methods=["POST"])
+def place_call():
+    data = request.get_json()
+    rid = data.get("resident_id")
+    if not rid:
+        return jsonify({"error": "resident_id 필요"}), 400
+
+    try:
+        # 데이터베이스에 호출 작업 생성
+        db_task_id = create_task('call', rid)
+
+        # Fleet Manager에게 호출 작업 요청
+        fleet_client = get_fleet_client()
+        
+        # Response handling
+        response_data = {}
+        response_event = threading.Event()
+        
+        def task_callback(response):
+            response_data.update(response)
+            response_event.set()
+        
+        # Send call task to fleet manager with DB task_id
+        task_id = fleet_client.send_call_task(rid, task_callback, db_task_id)
+        
+        # Wait for response (with timeout)
+        if response_event.wait(timeout=10.0):
+            if response_data.get('status') in ['assigned', 'in_progress', 'pending']:
+                return jsonify({
+                    "message": "호출 요청됨 (순서대로 처리됩니다)", 
+                    "resident_id": rid,
+                    "task_id": db_task_id,
+                    "queue_status": response_data.get('message', '')
+                })
+            else:
+                return jsonify({
+                    "error": f"Call task failed: {response_data.get('message', 'Unknown error')}"
+                }), 500
+        else:
+            return jsonify({"error": "Fleet manager timeout"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route("/confirm", methods=["POST"])
 def confirm():
     try:

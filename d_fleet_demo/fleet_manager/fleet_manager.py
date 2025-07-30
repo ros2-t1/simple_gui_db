@@ -103,20 +103,31 @@ class FleetManager(Node):
     def check_and_assign_tasks(self):
         """Check for pending tasks and assign to available robots (FIFO)"""
         try:
-            # Find idle robots
-            idle_robots = [robot_id for robot_id, robot_state in self.robots.items() 
-                          if robot_state.status == RobotStatus.IDLE]
+            # Find available robots (IDLE or returning to dock without current task)
+            available_robots = []
+            for robot_id, robot_state in self.robots.items():
+                if robot_state.status == RobotStatus.IDLE:
+                    available_robots.append(robot_id)
+                elif robot_state.status == RobotStatus.BUSY and not robot_state.current_task_id:
+                    # Robot is returning to dock but has no current task - can interrupt
+                    available_robots.append(robot_id)
             
-            if not idle_robots:
+            self.get_logger().info(f"DEBUG: Checking tasks - available_robots: {available_robots}")
+            
+            if not available_robots:
+                self.get_logger().info("DEBUG: No available robots")
                 return  # No available robots
             
             # Get next pending task from database (FIFO order)
             next_task = get_next_pending_task()
+            self.get_logger().info(f"DEBUG: Next pending task: {next_task}")
+            
             if not next_task:
+                self.get_logger().info("DEBUG: No pending tasks found")
                 return  # No pending tasks
             
             # Assign to first available robot
-            robot_id = idle_robots[0]
+            robot_id = available_robots[0]
             robot_db_id = self.robot_name_to_id[robot_id]
             
             # Update database
@@ -126,16 +137,20 @@ class FleetManager(Node):
             self.robots[robot_id].status = RobotStatus.BUSY
             self.robots[robot_id].current_task_id = str(next_task['task_id'])
             
-            # Send command to robot with resident_id for target location
-            if next_task['task_type'] == '배달':
+            # Send command to robot with resident_id and task_type
+            if next_task['task_type'] in ['배달', '호출']:
                 cmd_data = {
                     "command": "order",
-                    "resident_id": next_task['requester_resident_id']
+                    "resident_id": next_task['requester_resident_id'],
+                    "task_type": next_task['task_type']
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
                 
-                self.get_logger().info(f"Assigned task {next_task['task_id']} to {robot_id} for resident {next_task['requester_resident_id']}")
+                # Broadcast status update to web frontend immediately after assignment
+                self.broadcast_robot_status(robot_id, "task_assigned", str(next_task['task_id']))
+                
+                self.get_logger().info(f"Assigned {next_task['task_type']} task {next_task['task_id']} to {robot_id} for resident {next_task['requester_resident_id']}")
             
         except Exception as e:
             self.get_logger().error(f"Error in task assignment: {e}")
@@ -155,7 +170,7 @@ class FleetManager(Node):
             # Note: Task completion is now handled in handle_confirm_request()
             # idle means robot returned to dock after completing all tasks
             
-        elif status_text in ["moving_to_arm", "picking", "moving_to_user", "waiting_confirm", "returning_to_dock"]:
+        elif status_text in ["moving_to_arm", "picking", "moving_to_user", "waiting_confirm"]:
             robot_state.status = RobotStatus.BUSY
             
             # Update task status in database
@@ -164,6 +179,13 @@ class FleetManager(Node):
                     update_task_status(int(robot_state.current_task_id), 'in_progress')
                 except Exception as e:
                     self.get_logger().error(f"Error updating task status: {e}")
+        
+        elif status_text == "returning_to_dock":
+            robot_state.status = RobotStatus.BUSY
+            # Clear current_task_id when returning to dock - task is complete
+            if robot_state.current_task_id:
+                self.get_logger().info(f"Clearing current_task_id {robot_state.current_task_id} as robot returns to dock")
+                robot_state.current_task_id = None
         
         elif status_text == "navigation_failed":
             self.get_logger().error(f"Robot {robot_id} navigation failed!")
@@ -222,15 +244,19 @@ class FleetManager(Node):
                 robot_state.status = RobotStatus.BUSY
                 robot_state.current_task_id = str(next_task['task_id'])
                 
-                # Send order command with resident_id (robot will go to arm directly)
+                # Send order command with resident_id and task_type
                 cmd_data = {
                     "command": "order",
-                    "resident_id": next_task['requester_resident_id']
+                    "resident_id": next_task['requester_resident_id'],
+                    "task_type": next_task['task_type']
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
                 
-                self.get_logger().info(f"Assigned next task {next_task['task_id']} to {robot_id} for resident {next_task['requester_resident_id']} immediately after confirm")
+                # Broadcast status update to web frontend immediately after assignment
+                self.broadcast_robot_status(robot_id, "task_assigned", str(next_task['task_id']))
+                
+                self.get_logger().info(f"Assigned next {next_task['task_type']} task {next_task['task_id']} to {robot_id} for resident {next_task['requester_resident_id']} immediately after confirm")
             else:
                 # No more tasks - send confirm to return to dock
                 cmd_msg = String(data="confirm")

@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalLaterButton = document.getElementById('modal-later-button');
     const userNameSpan = document.getElementById('user-name');
     const logoutBtn = document.getElementById('logout-btn');
+    const callButton = document.getElementById('call-button');
     
     let itemsData = [];
     let statusPollingInterval = null;
@@ -468,6 +469,62 @@ document.addEventListener('DOMContentLoaded', () => {
             // 버튼 원래 상태로 복구
             orderButton.innerHTML = originalHTML;
             orderButton.disabled = false;
+        });
+    });
+
+    // 호출 버튼 클릭 이벤트
+    callButton.addEventListener('click', () => {
+        const residentId = localStorage.getItem('resident_id');
+        if (!residentId) {
+            logout();
+            return;
+        }
+
+        // 호출 버튼 로딩 상태
+        const originalHTML = callButton.innerHTML;
+        callButton.innerHTML = '<div class="loading"></div> 호출 중...';
+        callButton.disabled = true;
+
+        fetch('/call', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                resident_id: residentId
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`호출 실패: ${data.error}`);
+                // 버튼 원래 상태로 복구
+                callButton.innerHTML = originalHTML;
+                callButton.disabled = false;
+            } else {
+                // 호출 성공 처리
+                showSuccessNotification('로봇 호출이 요청되었습니다! 🤖');
+                
+                // 호출 버튼 원래 상태로 복구
+                callButton.innerHTML = originalHTML;
+                callButton.disabled = false;
+                
+                // 호출 후 상태 폴링 시작
+                if (statusPollingInterval) {
+                    clearInterval(statusPollingInterval);
+                }
+                statusPollingInterval = setInterval(pollRobotStatus, 2000);
+                
+                // 즉시 한 번 확인
+                pollRobotStatus();
+            }
+        })
+        .catch(error => {
+            alert('호출 처리 중 오류가 발생했습니다.');
+            console.error('호출 오류:', error);
+            // 버튼 원래 상태로 복구
+            callButton.innerHTML = originalHTML;
+            callButton.disabled = false;
         });
     });
 
