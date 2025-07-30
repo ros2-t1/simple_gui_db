@@ -3,6 +3,13 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from std_msgs.msg import String
+import json
+import sys
+import os
+
+# Add parent directory to path for database access
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from web.db import query_db
 
 from .arm import arm_pick, arm_place_on_robot
 from .nav2_waypoint_class import WaypointNavigator
@@ -29,21 +36,81 @@ class DeliveryFSM(Node):
         self.stat_pub  = self.create_publisher(String, cfg.ROS_STAT_TOPIC, 10)
         self.create_timer(0.5, self.loop)
         
+        # Default service station coordinates (will be updated per delivery)
+        self.service_station_coords = cfg.SERVICE_ST1
+        self.get_logger().info(f"Initialized with default service station coordinates: {self.service_station_coords}")
+        
         # Send initial status after a delay
         self.initial_status_timer = self.create_timer(1.0, self.send_initial_status)
         
         # Periodic status heartbeat (every 2 seconds)
         self.create_timer(2.0, self.send_heartbeat)
+    
+    def _parse_coordinates(self, coords):
+        """Parse PostgreSQL array format {x,y,z} to Python list [x,y,z]"""
+        if isinstance(coords, list):
+            return coords
+        if isinstance(coords, str):
+            # Remove braces and split by comma
+            clean_coords = coords.strip('{}')
+            return [float(x.strip()) for x in clean_coords.split(',')]
+        return coords
 
     # ---------- 토픽 콜백 / 퍼블리시 ----------
     def on_cmd(self, msg: String):
-        if msg.data == "order" and self.step == Step.IDLE:
-            self.set_step(Step.GO_TO_ARM)
-        elif msg.data == "order" and self.step == Step.WAIT_CONFIRM:
-            # New task assigned immediately after confirm - go directly to arm
-            self.set_step(Step.GO_TO_ARM)
-        elif msg.data == "confirm" and self.step == Step.WAIT_CONFIRM:
+        try:
+            # Try to parse as JSON first (new format with resident_id)
+            cmd_data = json.loads(msg.data)
+            command = cmd_data.get("command")
+            resident_id = cmd_data.get("resident_id")
+            
+            if command == "order":
+                if resident_id:
+                    # Update service station coordinates for this delivery
+                    new_coords = self._get_service_station_coords(resident_id)
+                    if new_coords:
+                        self.service_station_coords = new_coords
+                        self.get_logger().info(f"Updated delivery target for resident {resident_id}: {new_coords}")
+                
+                if self.step == Step.IDLE:
+                    self.set_step(Step.GO_TO_ARM)
+                elif self.step == Step.WAIT_CONFIRM:
+                    # New task assigned immediately after confirm - go directly to arm
+                    self.set_step(Step.GO_TO_ARM)
+                    
+        except json.JSONDecodeError:
+            # Fallback to old string format
+            if msg.data == "order" and self.step == Step.IDLE:
+                self.set_step(Step.GO_TO_ARM)
+            elif msg.data == "order" and self.step == Step.WAIT_CONFIRM:
+                # New task assigned immediately after confirm - go directly to arm
+                self.set_step(Step.GO_TO_ARM)
+        
+        # Handle confirm command (always string format)
+        if msg.data == "confirm" and self.step == Step.WAIT_CONFIRM:
             self.set_step(Step.GO_DOCK)
+    
+    def _get_service_station_coords(self, resident_id):
+        """Get service station coordinates for the given resident"""
+        try:
+            with query_db() as cur:
+                cur.execute("""
+                    SELECT l.coordinates 
+                    FROM residents r 
+                    JOIN locations l ON r.service_station_id = l.location_id 
+                    WHERE r.resident_id = %s
+                """, (resident_id,))
+                result = cur.fetchone()
+                
+                if result:
+                    coordinates = result[0]  # PostgreSQL array format: {x,y,z}
+                    return self._parse_coordinates(coordinates)
+                else:
+                    self.get_logger().warn(f"No service station found for resident {resident_id}")
+                    return None
+        except Exception as e:
+            self.get_logger().error(f"Error getting service station for resident {resident_id}: {e}")
+            return None
 
     def pub_status(self, text: str):
         self.stat_pub.publish(String(data=text))
@@ -67,7 +134,7 @@ class DeliveryFSM(Node):
                 self.set_step(Step.GO_TO_USER)
             case Step.GO_TO_USER:
                 self.pub_status("moving_to_user")
-                self.waypoint_nav.send_goal(cfg.SERVICE_ST1)
+                self.waypoint_nav.send_goal(self.service_station_coords)
             case Step.WAIT_CONFIRM:
                 self.pub_status("waiting_confirm")
             case Step.GO_DOCK:

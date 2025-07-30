@@ -126,12 +126,16 @@ class FleetManager(Node):
             self.robots[robot_id].status = RobotStatus.BUSY
             self.robots[robot_id].current_task_id = str(next_task['task_id'])
             
-            # Send command to robot
+            # Send command to robot with resident_id for target location
             if next_task['task_type'] == '배달':
-                cmd_msg = String(data="order")
+                cmd_data = {
+                    "command": "order",
+                    "resident_id": next_task['requester_resident_id']
+                }
+                cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
                 
-                self.get_logger().info(f"Assigned task {next_task['task_id']} to {robot_id}")
+                self.get_logger().info(f"Assigned task {next_task['task_id']} to {robot_id} for resident {next_task['requester_resident_id']}")
             
         except Exception as e:
             self.get_logger().error(f"Error in task assignment: {e}")
@@ -194,11 +198,15 @@ class FleetManager(Node):
                 robot_state.status = RobotStatus.BUSY
                 robot_state.current_task_id = str(next_task['task_id'])
                 
-                # Send order command (robot will go to arm directly)
-                cmd_msg = String(data="order")
+                # Send order command with resident_id (robot will go to arm directly)
+                cmd_data = {
+                    "command": "order",
+                    "resident_id": next_task['requester_resident_id']
+                }
+                cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
                 
-                self.get_logger().info(f"Assigned next task {next_task['task_id']} to {robot_id} immediately after confirm")
+                self.get_logger().info(f"Assigned next task {next_task['task_id']} to {robot_id} for resident {next_task['requester_resident_id']} immediately after confirm")
             else:
                 # No more tasks - send confirm to return to dock
                 cmd_msg = String(data="confirm")

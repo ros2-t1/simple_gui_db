@@ -24,6 +24,7 @@ def main():
     wp_nav = WaypointNavigator()
     wp_nav._node_name = f"{robot_id}_waypoint_navigator"
     
+    # FSM will get service station coordinates dynamically per task
     fsm = DeliveryFSM(robot_id, wp_nav)
     
     # Create executor and add nodes

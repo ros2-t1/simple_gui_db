@@ -6,6 +6,7 @@ import time
 import signal
 import sys
 from web import create_app
+from web.db import query_db
 
 # Process list to track subprocesses
 processes = []
@@ -40,8 +41,8 @@ def main():
     processes.append(fleet_manager_proc)
     time.sleep(2)  # Wait for fleet manager to initialize
     
-    # 2. Start Robot Nodes
-    robot_ids = ["robot_1"]  # Can add more robots here
+    # 2. Start single Robot Node (delivery location will be set dynamically per order)
+    robot_ids = ["robot_1"]  # Single robot that serves all residents
     
     for robot_id in robot_ids:
         print(f"Starting {robot_id}...")

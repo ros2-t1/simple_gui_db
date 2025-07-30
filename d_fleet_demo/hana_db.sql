@@ -115,9 +115,7 @@ CREATE TABLE public.locations (
     location_id integer NOT NULL,
     location_type character varying NOT NULL,
     location_name character varying(100) NOT NULL,
-    x_coord double precision,
-    y_coord double precision,
-    yaw double precision NOT NULL,
+    coordinates double precision[],
     CONSTRAINT locations_location_type_check CHECK (((location_type)::text = ANY ((ARRAY['서비스 스테이션'::character varying, '픽업 스테이션'::character varying, '충전 스테이션'::character varying, '선반'::character varying])::text[])))
 );
 
@@ -373,10 +371,10 @@ COPY public.hana_bots (hana_bot_id, bot_name, battery, status) FROM stdin;
 --
 
 COPY public.items (item_id, item_type, item_quantity) FROM stdin;
-10	영양제	82
-11	생필품	87
-9	물	74
+9	물	64
 12	식판	94
+10	영양제	78
+11	생필품	86
 \.
 
 
@@ -384,10 +382,10 @@ COPY public.items (item_id, item_type, item_quantity) FROM stdin;
 -- Data for Name: locations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.locations (location_id, location_type, location_name, x_coord, y_coord, yaw) FROM stdin;
-1	서비스 스테이션	ROOM1	0.1	0.78	-0.707
-3	충전 스테이션	CHARGER1	0	0	1
-5	픽업 스테이션	PICKUP	0.33	-0.33	-1
+COPY public.locations (location_id, location_type, location_name, coordinates) FROM stdin;
+1	서비스 스테이션	ROOM1	{0.1,0.78,-0.707}
+3	충전 스테이션	CHARGER1	{0,0,1}
+5	픽업 스테이션	PICKUP	{0.33,-0.33,-1}
 \.
 
 
@@ -456,6 +454,8 @@ COPY public.login_logs (id, resident_id, success, client_ip, login_time) FROM st
 62	9999	t	192.168.219.115	2025-07-29 15:31:43.067347
 63	9999	t	192.168.219.111	2025-07-29 15:57:28.204878
 64	9999	t	192.168.219.111	2025-07-29 16:19:57.260177
+65	9999	t	192.168.0.13	2025-07-30 05:35:40.810894
+66	9999	t	127.0.0.1	2025-07-30 06:30:19.201128
 \.
 
 
@@ -473,8 +473,8 @@ COPY public.reserved_tasks (reserved_task_id, task_type, requester_resident_id, 
 
 COPY public.residents (resident_id, name, gender, birth_date, assigned_room_id, service_station_id, login_id, password) FROM stdin;
 2	김순자	F	1930-01-01	\N	\N	soon_30	$2a$06$wExDrXZHKyrQR90HXYyTSOqNGJeIO8KhfJLwVQwK0foOWf5QJgmhS
-1	김복자	F	1940-01-01	\N	\N	40bokja	$2a$06$PTSh8ggRGKVxT1p5d0ZDl.glBkgOaRN7RWb3hX8L5pfMz8D7BR29O
-9999	admin	M	1900-01-01	\N	\N	admin	$2a$06$BOFmpxmSteP7o5KQ2gfG4u/1hcr0m8xECPm7GQtQXW9GB/JwL13vi
+1	김복자	F	1940-01-01	\N	1	40bokja	$2a$06$PTSh8ggRGKVxT1p5d0ZDl.glBkgOaRN7RWb3hX8L5pfMz8D7BR29O
+9999	admin	M	1900-01-01	\N	1	admin	$2a$06$BOFmpxmSteP7o5KQ2gfG4u/1hcr0m8xECPm7GQtQXW9GB/JwL13vi
 \.
 
 
@@ -485,12 +485,21 @@ COPY public.residents (resident_id, name, gender, birth_date, assigned_room_id, 
 COPY public.tasks (task_id, task_type, status, requester_resident_id, item_id, target_location_id, source_reserved_task_id, assigned_bot_id, created_at, completed_at) FROM stdin;
 9	배달	완료	9999	9	\N	\N	10	2025-07-29 15:57:41.475438	2025-07-29 15:58:42.471243
 11	배달	완료	9999	9	\N	\N	10	2025-07-29 16:03:56.247605	2025-07-29 16:04:40.397819
+23	배달	완료	9999	9	\N	\N	10	2025-07-29 18:17:28.534815	2025-07-29 18:20:02.132412
+35	배달	완료	9999	10	\N	\N	10	2025-07-30 06:38:35.098114	2025-07-30 06:39:09.889635
 4	배달	완료	9999	\N	\N	\N	10	2025-07-29 15:41:15.405506	2025-07-29 15:42:50.362658
+28	배달	실패	9999	9	\N	\N	10	2025-07-30 06:21:41.200103	2025-07-30 06:22:44.443735
 16	배달	실패	9999	9	\N	\N	10	2025-07-29 17:13:17.0771	2025-07-29 17:18:42.864109
 5	배달	완료	9999	\N	\N	\N	10	2025-07-29 15:41:22.686985	2025-07-29 15:42:54.274096
+33	배달	완료	9999	9	\N	\N	10	2025-07-30 06:30:25.555726	2025-07-30 06:31:20.459021
 13	배달	완료	9999	10	\N	\N	10	2025-07-29 16:10:29.076258	2025-07-29 16:12:51.029105
+31	배달	실패	9999	9	\N	\N	10	2025-07-30 06:28:14.450461	2025-07-30 06:32:38.647567
+26	배달	실패	9999	9	\N	\N	10	2025-07-30 00:43:15.569987	2025-07-30 00:44:27.774898
+25	배달	실패	9999	9	\N	\N	10	2025-07-30 00:34:45.038622	2025-07-30 00:44:27.774898
 8	배달	완료	9999	\N	\N	\N	10	2025-07-29 15:50:40.818904	2025-07-29 15:52:20.031877
+30	배달	완료	9999	10	\N	\N	10	2025-07-30 06:25:59.78522	2025-07-30 06:28:02.800489
 3	배달	완료	9999	\N	\N	\N	10	2025-07-29 15:35:37.88762	2025-07-29 15:40:30.241157
+29	배달	실패	9999	9	\N	\N	10	2025-07-30 06:23:00.495997	2025-07-30 06:25:03.25255
 10	배달	완료	9999	10	\N	\N	10	2025-07-29 15:58:02.176751	2025-07-29 15:59:26.922245
 14	배달	완료	9999	9	\N	\N	10	2025-07-29 16:10:37.827045	2025-07-29 16:15:21.677167
 15	배달	완료	9999	9	\N	\N	10	2025-07-29 16:20:06.351885	2025-07-29 16:22:23.21619
@@ -500,8 +509,14 @@ COPY public.tasks (task_id, task_type, status, requester_resident_id, item_id, t
 7	배달	완료	9999	\N	\N	\N	10	2025-07-29 15:43:57.005422	2025-07-29 15:46:50.012951
 21	배달	완료	9999	9	\N	\N	10	2025-07-29 17:49:11.355123	2025-07-29 17:49:59.927517
 6	배달	완료	9999	\N	\N	\N	10	2025-07-29 15:43:47.224697	2025-07-29 15:44:51.196828
+24	배달	완료	9999	10	\N	\N	10	2025-07-29 18:18:23.400562	2025-07-29 18:21:05.321115
+34	배달	완료	9999	9	\N	\N	10	2025-07-30 06:37:15.850573	2025-07-30 06:38:01.600349
+32	배달	완료	9999	10	\N	\N	10	2025-07-30 06:28:23.157816	2025-07-30 06:30:30.19887
+36	배달	완료	9999	11	\N	\N	10	2025-07-30 06:38:37.992596	2025-07-30 06:39:56.291719
+27	배달	완료	9999	9	\N	\N	10	2025-07-30 00:44:52.420977	2025-07-30 00:46:07.783632
 20	배달	완료	9999	9	\N	\N	10	2025-07-29 17:38:19.429736	2025-07-29 17:39:42.038697
 17	배달	실패	9999	11	\N	\N	10	2025-07-29 17:13:47.123178	2025-07-29 17:22:57.570537
+22	배달	완료	9999	9	\N	\N	10	2025-07-29 18:16:24.733421	2025-07-29 18:17:23.441395
 \.
 
 
@@ -530,7 +545,7 @@ SELECT pg_catalog.setval('public.locations_location_id_seq', 1, false);
 -- Name: login_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.login_logs_id_seq', 64, true);
+SELECT pg_catalog.setval('public.login_logs_id_seq', 66, true);
 
 
 --
@@ -551,7 +566,7 @@ SELECT pg_catalog.setval('public.residents_resident_id_seq', 2, true);
 -- Name: tasks_task_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tasks_task_id_seq', 21, true);
+SELECT pg_catalog.setval('public.tasks_task_id_seq', 36, true);
 
 
 --
@@ -661,6 +676,14 @@ CREATE INDEX idx_tasks_status ON public.tasks USING btree (status);
 
 ALTER TABLE ONLY public.login_logs
     ADD CONSTRAINT fk_loginlogs_resident FOREIGN KEY (resident_id) REFERENCES public.residents(resident_id);
+
+
+--
+-- Name: residents fk_service_station; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.residents
+    ADD CONSTRAINT fk_service_station FOREIGN KEY (service_station_id) REFERENCES public.locations(location_id);
 
 
 --
