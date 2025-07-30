@@ -429,6 +429,126 @@
             100% { opacity: 1; }
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .camera-preview-active {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Multi-Camera Grid Styles */
+        .camera-stream-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-bg);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            min-height: 200px;
+        }
+
+        .camera-placeholder {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .camera-placeholder i {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .camera-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .camera-overlay i {
+            color: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        .camera-status {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.online {
+            background: var(--success-color);
+            box-shadow: 0 0 4px var(--success-color);
+        }
+
+        .status-dot.offline {
+            background: var(--text-muted);
+        }
+
+        .camera-grid-item {
+            margin-bottom: 15px;
+        }
+
+        .camera-grid-item:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+
+        /* Single Camera View */
+        #single-camera-container {
+            min-height: 600px;
+        }
+
+        /* Auto Switch Indicator */
+        .auto-switch-active {
+            background: var(--success-color) !important;
+            color: white !important;
+        }
+
+        /* Camera grid animations */
+        .camera-connecting {
+            border: 2px solid var(--info-color);
+            animation: pulse 1s infinite;
+        }
+
+        .camera-error {
+            border: 2px solid var(--danger-color);
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .container-fluid {
@@ -560,6 +680,9 @@
             <a href="#items" class="nav-link" data-section="items">
                 <i class="bi bi-box-seam"></i> Items
             </a>
+            <a href="#camera" class="nav-link" data-section="camera">
+                <i class="bi bi-camera-video"></i> Camera Stream
+            </a>
         </nav>
     </div>
 
@@ -636,9 +759,41 @@
                 </div>
             </div>
 
+            <!-- Camera System Metrics -->
+            <div class="row metrics-row">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="active-cameras">0</div>
+                        <div class="metric-label">Active Cameras</div>
+                        <div class="metric-change positive" id="cameras-change">+0%</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="camera-bandwidth">0.0</div>
+                        <div class="metric-label">Bandwidth (Mbps)</div>
+                        <div class="metric-change" id="bandwidth-change">±0%</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="system-uptime">0h</div>
+                        <div class="metric-label">System Uptime</div>
+                        <div class="metric-change positive" id="uptime-change">100%</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value" id="camera-alerts">0</div>
+                        <div class="metric-label">Alerts Today</div>
+                        <div class="metric-change negative" id="alerts-change">0</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Charts Section -->
             <div class="row chart-section">
-                <div class="col-lg-8">
+                <div class="col-lg-6">
                     <div class="chart-container">
                         <div class="chart-header">
                             <div class="chart-title">
@@ -656,7 +811,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="chart-container">
                         <div class="chart-header">
                             <div class="chart-title">
@@ -666,6 +821,40 @@
                         </div>
                         <div class="chart-wrapper small">
                             <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="bi bi-camera-video"></i>
+                                Live Camera Feed
+                            </div>
+                            <div class="chart-controls">
+                                <button class="chart-control" onclick="startCameraStream()">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                                <button class="chart-control" onclick="stopCameraStream()">
+                                    <i class="bi bi-stop-fill"></i>
+                                </button>
+                                <button class="chart-control" onclick="showSection('camera')">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper small">
+                            <div id="camera-preview-container" style="width: 100%; height: 100%; background: var(--accent-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+                                <div id="camera-preview-placeholder" style="color: var(--text-muted); font-size: 12px; text-align: center;">
+                                    <i class="bi bi-camera-video" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
+                                    Camera Preview
+                                    <div style="font-size: 10px; margin-top: 4px; opacity: 0.7;">Click play to start</div>
+                                </div>
+                                <img id="camera-preview-stream" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" />
+                                <div id="camera-preview-status" style="position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 3px; font-size: 9px; display: none;">
+                                    <i class="bi bi-record-circle" style="color: #ff4444;"></i> LIVE
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -896,6 +1085,275 @@
                         <tr><td colspan="4" class="text-center">Loading items...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Camera Section -->
+        <div id="camera-section" class="section-content">
+            <!-- Camera Control Panel -->
+            <div class="control-panel" style="margin-bottom: 20px;">
+                <div class="control-panel-header">
+                    <div class="chart-title">
+                        <i class="bi bi-camera-video"></i>
+                        Multi-Camera Control Center
+                    </div>
+                </div>
+                <div class="control-actions">
+                    <button class="action-button success" onclick="startAllCameras()">
+                        <i class="bi bi-play-fill"></i>
+                        Start All
+                    </button>
+                    <button class="action-button danger" onclick="stopAllCameras()">
+                        <i class="bi bi-stop-fill"></i>
+                        Stop All
+                    </button>
+                    <button class="action-button" onclick="switchLayout('single')">
+                        <i class="bi bi-square"></i>
+                        Single View
+                    </button>
+                    <button class="action-button active" onclick="switchLayout('grid')">
+                        <i class="bi bi-grid-3x3"></i>
+                        Grid View
+                    </button>
+                    <button class="action-button" onclick="toggleAutoSwitch()">
+                        <i class="bi bi-arrow-repeat"></i>
+                        Auto Switch
+                    </button>
+                    <button class="action-button" onclick="takeAllSnapshots()">
+                        <i class="bi bi-camera"></i>
+                        Snapshot All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Camera Grid Layout -->
+            <div id="camera-grid-layout">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <!-- Global Camera -->
+                        <div class="chart-container camera-grid-item" data-camera="global">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-globe"></i>
+                                    Global Camera
+                                    <span class="badge bg-secondary ms-2" style="font-size: 9px;">Main View</span>
+                                </div>
+                                <div class="chart-controls">
+                                    <button class="chart-control" onclick="startSpecificCamera('global')">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="stopSpecificCamera('global')">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="focusCamera('global')">
+                                        <i class="bi bi-arrows-fullscreen"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper small">
+                                <div class="camera-stream-container" id="camera-container-global">
+                                    <div class="camera-placeholder" id="camera-placeholder-global">
+                                        <i class="bi bi-camera-video"></i>
+                                        <div>Global Camera</div>
+                                        <div class="small">Port: 5000</div>
+                                    </div>
+                                    <img class="camera-stream" id="camera-stream-global" style="display: none;" />
+                                    <div class="camera-overlay" id="camera-overlay-global" style="display: none;">
+                                        <i class="bi bi-record-circle"></i> LIVE
+                                    </div>
+                                    <div class="camera-status" id="camera-status-global">
+                                        <span class="status-dot offline"></span> Offline
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <!-- HanaBot 3 Camera -->
+                        <div class="chart-container camera-grid-item" data-camera="hanabot_3">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-robot"></i>
+                                    HanaBot 3
+                                    <span class="badge bg-info ms-2" style="font-size: 9px;">Station A</span>
+                                </div>
+                                <div class="chart-controls">
+                                    <button class="chart-control" onclick="startSpecificCamera('hanabot_3')">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="stopSpecificCamera('hanabot_3')">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="focusCamera('hanabot_3')">
+                                        <i class="bi bi-arrows-fullscreen"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper small">
+                                <div class="camera-stream-container" id="camera-container-hanabot_3">
+                                    <div class="camera-placeholder" id="camera-placeholder-hanabot_3">
+                                        <i class="bi bi-robot"></i>
+                                        <div>HanaBot 3</div>
+                                        <div class="small">Port: 50003</div>
+                                    </div>
+                                    <img class="camera-stream" id="camera-stream-hanabot_3" style="display: none;" />
+                                    <div class="camera-overlay" id="camera-overlay-hanabot_3" style="display: none;">
+                                        <i class="bi bi-record-circle"></i> LIVE
+                                    </div>
+                                    <div class="camera-status" id="camera-status-hanabot_3">
+                                        <span class="status-dot offline"></span> Offline
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-6">
+                        <!-- HanaBot 7 Camera -->
+                        <div class="chart-container camera-grid-item" data-camera="hanabot_7">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-robot"></i>
+                                    HanaBot 7
+                                    <span class="badge bg-success ms-2" style="font-size: 9px;">Station B</span>
+                                </div>
+                                <div class="chart-controls">
+                                    <button class="chart-control" onclick="startSpecificCamera('hanabot_7')">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="stopSpecificCamera('hanabot_7')">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="focusCamera('hanabot_7')">
+                                        <i class="bi bi-arrows-fullscreen"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper small">
+                                <div class="camera-stream-container" id="camera-container-hanabot_7">
+                                    <div class="camera-placeholder" id="camera-placeholder-hanabot_7">
+                                        <i class="bi bi-robot"></i>
+                                        <div>HanaBot 7</div>
+                                        <div class="small">Port: 5007</div>
+                                    </div>
+                                    <img class="camera-stream" id="camera-stream-hanabot_7" style="display: none;" />
+                                    <div class="camera-overlay" id="camera-overlay-hanabot_7" style="display: none;">
+                                        <i class="bi bi-record-circle"></i> LIVE
+                                    </div>
+                                    <div class="camera-status" id="camera-status-hanabot_7">
+                                        <span class="status-dot offline"></span> Offline
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <!-- HanaBot 8 Camera -->
+                        <div class="chart-container camera-grid-item" data-camera="hanabot_8">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-robot"></i>
+                                    HanaBot 8
+                                    <span class="badge bg-warning ms-2" style="font-size: 9px;">Station C</span>
+                                </div>
+                                <div class="chart-controls">
+                                    <button class="chart-control" onclick="startSpecificCamera('hanabot_8')">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="stopSpecificCamera('hanabot_8')">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="focusCamera('hanabot_8')">
+                                        <i class="bi bi-arrows-fullscreen"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper small">
+                                <div class="camera-stream-container" id="camera-container-hanabot_8">
+                                    <div class="camera-placeholder" id="camera-placeholder-hanabot_8">
+                                        <i class="bi bi-robot"></i>
+                                        <div>HanaBot 8</div>
+                                        <div class="small">Port: 5008</div>
+                                    </div>
+                                    <img class="camera-stream" id="camera-stream-hanabot_8" style="display: none;" />
+                                    <div class="camera-overlay" id="camera-overlay-hanabot_8" style="display: none;">
+                                        <i class="bi bi-record-circle"></i> LIVE
+                                    </div>
+                                    <div class="camera-status" id="camera-status-hanabot_8">
+                                        <span class="status-dot offline"></span> Offline
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Single Camera View (Initially Hidden) -->
+            <div id="camera-single-layout" style="display: none;">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="bi bi-camera-video"></i>
+                            <span id="single-camera-title">Camera View</span>
+                        </div>
+                        <div class="chart-controls">
+                            <button class="chart-control" onclick="switchLayout('grid')">
+                                <i class="bi bi-grid-3x3"></i> Back to Grid
+                            </button>
+                            <button class="chart-control" onclick="takeSnapshot()">
+                                <i class="bi bi-camera"></i> Snapshot
+                            </button>
+                            <button class="chart-control" onclick="toggleFullscreen()">
+                                <i class="bi bi-arrows-fullscreen"></i> Fullscreen
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper" style="height: 600px;">
+                        <div id="single-camera-container" class="camera-stream-container">
+                            <div class="camera-placeholder" id="single-camera-placeholder">
+                                <i class="bi bi-camera-video" style="font-size: 64px;"></i>
+                                <div style="font-size: 18px; margin: 15px 0;">Select a camera to view</div>
+                            </div>
+                            <img class="camera-stream" id="single-camera-stream" style="display: none;" />
+                            <div class="camera-overlay" id="single-camera-overlay" style="display: none;">
+                                <i class="bi bi-record-circle"></i> LIVE
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Status Panel -->
+            <div class="row" style="margin-top: 20px;">
+                <div class="col-12">
+                    <div class="data-table-container">
+                        <div class="table-header">
+                            <div class="table-title">
+                                <i class="bi bi-list-ul"></i>
+                                Camera Status Overview
+                            </div>
+                        </div>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Camera</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Port</th>
+                                    <th>FPS</th>
+                                    <th>Resolution</th>
+                                    <th>Last Update</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="camera-status-table">
+                                <tr><td colspan="8" class="text-center">Loading camera status...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
