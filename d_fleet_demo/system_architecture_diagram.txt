@@ -1,0 +1,327 @@
+# HANA Fleet Management System - Architecture Visualization
+
+## 1. System Overview Diagram (Mermaid)
+
+```mermaid
+graph TB
+    subgraph "External Clients"
+        USER[👤 Users]
+        ADMIN[🔧 Admin]
+        CAMERA_FEEDS[📹 Camera Feeds<br/>UDP Multicast]
+    end
+
+    subgraph "Web Interface Layer"
+        FLASK[🌐 Flask Web Server<br/>Port: 5000]
+        
+        subgraph "Web Routes"
+            AUTH[🔐 auth.py<br/>Authentication]
+            ORDERS[📦 orders.py<br/>Order Management]
+            ORDER2[📦 order2.py<br/>Enhanced Orders]
+            ITEMS[📋 items.py<br/>Item Management]
+            STATUS[📊 status.py<br/>System Status]
+            FLEET_MON[🚛 fleet_monitor.py<br/>Fleet Monitoring]
+            CAMERA_RT[📹 camera.py<br/>Multi-Camera Control]
+        end
+        
+        subgraph "Web Templates"
+            LOGIN_HTML[🔑 login.html]
+            ORDER_HTML[📝 order.html]
+            ORDER2_HTML[📝 order2.html]
+            FLEET_HTML[📊 fleet_dashboard.html]
+            ADV_FLEET_HTML[📊 advanced_fleet_dashboard.html]
+            ADMIN_HTML[⚙️ admin_dashboard.html]
+        end
+        
+        subgraph "Static Assets"
+            ADMIN_JS[📱 admin_dashboard.js<br/>Multi-Camera Controls]
+            FLEET_JS[📱 fleet_dashboard.js]
+            ORDER_JS[📱 order.js & order2.js]
+        end
+    end
+
+    subgraph "Core Business Logic"
+        DATA_ACCESS[💾 data_access.py<br/>Data Layer Abstraction]
+        TASK_DB[🗄️ task_db.py<br/>Task Management]
+        DB_MODULE[🗄️ db.py<br/>Database Interface]
+        UTILS[🔧 utils.py<br/>UDP Camera Stream<br/>Helper Functions]
+        FLEET_CLIENT[🤖 fleet_client.py<br/>Fleet Communication]
+    end
+
+    subgraph "Database Layer"
+        POSTGRES[(🗄️ PostgreSQL<br/>hana_db<br/>20.249.209.1:5432)]
+        
+        subgraph "Database Tables"
+            USERS_TBL[👥 users]
+            ITEMS_TBL[📦 items]
+            ORDERS_TBL[📋 orders]
+            ROBOTS_TBL[🤖 robots]
+            TASKS_TBL[📋 tasks]
+        end
+    end
+
+    subgraph "Robot Management Layer"
+        FLEET_MGR[🚛 fleet_manager.py<br/>Central Fleet Controller]
+        
+        subgraph "Robot Nodes"
+            ROBOT_NODE[🤖 robot_node.py<br/>Individual Robot Control]
+        end
+        
+        subgraph "Robot Components"
+            FSM[🔄 fsm.py<br/>Finite State Machine]
+            ARM[🦾 arm.py<br/>Arm Control]
+            NAV2[🧭 nav2_waypoint_class.py<br/>Navigation System]
+        end
+    end
+
+    subgraph "ROS2 Communication Layer"
+        ROS2[🔗 ROS2 Network]
+        
+        subgraph "Topics & Services"
+            CMD_TOPIC[📢 user_cmd]
+            STAT_TOPIC[📊 status]
+            FLEET_MSGS[📨 fleet_msgs.py<br/>Message Definitions]
+        end
+    end
+
+    subgraph "Camera System"
+        GLOBAL_CAM[🌐 Global Camera<br/>1920x1080<br/>Port: 5000]
+        
+        subgraph "Robot Cameras"
+            HANABOT3_CAM[🤖 HanaBot 3<br/>640x480<br/>Port: 5003<br/>Station A]
+            HANABOT8_CAM[🤖 HanaBot 8<br/>640x480<br/>Port: 5008<br/>Station B]
+            HANABOT9_CAM[🤖 HanaBot 9<br/>640x480<br/>Port: 5009<br/>Station C]
+        end
+    end
+
+    subgraph "Configuration"
+        CONFIG[⚙️ config.py<br/>System Configuration<br/>Database Settings<br/>Camera Ports<br/>Robot Positions]
+    end
+
+    subgraph "Launcher Scripts"
+        RUN_SERVER[🚀 run_server.py<br/>Single Robot Mode]
+        RUN_FLEET[🚀 run_fleet.py<br/>Fleet Management Mode]
+    end
+
+    %% User Interactions
+    USER --> FLASK
+    ADMIN --> FLASK
+    
+    %% Web Layer Connections
+    FLASK --> AUTH
+    FLASK --> ORDERS
+    FLASK --> ORDER2
+    FLASK --> ITEMS
+    FLASK --> STATUS
+    FLASK --> FLEET_MON
+    FLASK --> CAMERA_RT
+    
+    AUTH --> LOGIN_HTML
+    ORDERS --> ORDER_HTML
+    ORDER2 --> ORDER2_HTML
+    FLEET_MON --> FLEET_HTML
+    FLEET_MON --> ADV_FLEET_HTML
+    STATUS --> ADMIN_HTML
+    
+    ADMIN_HTML --> ADMIN_JS
+    FLEET_HTML --> FLEET_JS
+    ORDER2_HTML --> ORDER_JS
+    
+    %% Business Logic Connections
+    AUTH --> DATA_ACCESS
+    ORDERS --> DATA_ACCESS
+    ORDER2 --> DATA_ACCESS
+    ITEMS --> DATA_ACCESS
+    STATUS --> TASK_DB
+    FLEET_MON --> FLEET_CLIENT
+    CAMERA_RT --> UTILS
+    
+    DATA_ACCESS --> DB_MODULE
+    TASK_DB --> DB_MODULE
+    FLEET_CLIENT --> FLEET_MGR
+    
+    %% Database Connections
+    DB_MODULE --> POSTGRES
+    POSTGRES --> USERS_TBL
+    POSTGRES --> ITEMS_TBL
+    POSTGRES --> ORDERS_TBL
+    POSTGRES --> ROBOTS_TBL
+    POSTGRES --> TASKS_TBL
+    
+    %% Robot Management
+    FLEET_MGR --> ROBOT_NODE
+    ROBOT_NODE --> FSM
+    ROBOT_NODE --> ARM
+    ROBOT_NODE --> NAV2
+    
+    %% ROS2 Communication
+    FLEET_MGR --> ROS2
+    ROBOT_NODE --> ROS2
+    ROS2 --> CMD_TOPIC
+    ROS2 --> STAT_TOPIC
+    ROS2 --> FLEET_MSGS
+    
+    %% Camera System
+    CAMERA_FEEDS --> GLOBAL_CAM
+    CAMERA_FEEDS --> HANABOT3_CAM
+    CAMERA_FEEDS --> HANABOT8_CAM
+    CAMERA_FEEDS --> HANABOT9_CAM
+    
+    GLOBAL_CAM --> UTILS
+    HANABOT3_CAM --> UTILS
+    HANABOT8_CAM --> UTILS
+    HANABOT9_CAM --> UTILS
+    
+    %% Configuration
+    CONFIG --> FLASK
+    CONFIG --> FLEET_MGR
+    CONFIG --> UTILS
+    CONFIG --> DB_MODULE
+    
+    %% Launchers
+    RUN_SERVER --> FLASK
+    RUN_SERVER --> FSM
+    RUN_SERVER --> NAV2
+    RUN_FLEET --> FLASK
+    RUN_FLEET --> FLEET_MGR
+
+    %% Styling
+    classDef webLayer fill:#e1f5fe
+    classDef robotLayer fill:#f3e5f5
+    classDef dbLayer fill:#e8f5e8
+    classDef cameraLayer fill:#fff3e0
+    classDef configLayer fill:#fce4ec
+    
+    class FLASK,AUTH,ORDERS,ORDER2,ITEMS,STATUS,FLEET_MON,CAMERA_RT webLayer
+    class FLEET_MGR,ROBOT_NODE,FSM,ARM,NAV2,ROS2 robotLayer
+    class POSTGRES,USERS_TBL,ITEMS_TBL,ORDERS_TBL,ROBOTS_TBL,TASKS_TBL,DB_MODULE dbLayer
+    class GLOBAL_CAM,HANABOT3_CAM,HANABOT8_CAM,HANABOT9_CAM,CAMERA_RT,UTILS cameraLayer
+    class CONFIG configLayer
+```
+
+## 2. Data Flow Diagram (Mermaid)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Web Interface
+    participant DB as Database
+    participant FM as Fleet Manager
+    participant R as Robot
+    participant C as Camera System
+
+    Note over U,C: Order Processing Flow
+    U->>W: Place Order (order2.html)
+    W->>DB: Store Order & Create Task
+    W->>FM: Send Task to Fleet
+    FM->>R: Assign Task to Robot
+    R->>R: Execute Task (FSM)
+    R->>FM: Report Status
+    FM->>W: Update Task Status
+    W->>DB: Update Database
+    W->>U: Show Updated Status
+
+    Note over U,C: Camera Monitoring Flow
+    C->>W: UDP Multicast Streams
+    W->>W: Process Camera Feeds
+    U->>W: Request Camera View
+    W->>U: Stream Camera Data
+    U->>W: Control Camera (Start/Stop)
+    W->>C: Camera Control Commands
+
+    Note over U,C: Fleet Monitoring Flow
+    R->>FM: Continuous Status Updates
+    FM->>W: Fleet Status Data
+    W->>DB: Store Fleet Metrics
+    U->>W: View Dashboard
+    W->>U: Real-time Fleet Data
+```
+
+## 3. System Components Detail
+
+### Web Interface Layer
+- **Flask Server**: Main web application server
+- **Routes**: RESTful API endpoints for different functionalities
+- **Templates**: HTML templates with Bootstrap UI
+- **Static Assets**: JavaScript for real-time interactions
+
+### Database Layer
+- **PostgreSQL**: Main data storage
+- **Tables**: users, items, orders, robots, tasks
+- **Access Layer**: Abstracted database operations
+
+### Robot Management
+- **Fleet Manager**: Central coordination of multiple robots
+- **Robot Nodes**: Individual robot control instances
+- **FSM**: State machine for task execution
+- **Navigation**: ROS2 Nav2 integration
+
+### Camera System
+- **Global Camera**: 1920x1080 main surveillance camera
+- **Robot Cameras**: 640x480 individual robot cameras
+- **UDP Multicast**: Real-time video streaming
+- **Multi-Camera Control**: Web-based camera management
+
+### Configuration Management
+- **Centralized Config**: Single source of configuration
+- **Database Settings**: Connection parameters
+- **Camera Ports**: UDP multicast port assignments
+- **Robot Positions**: Predefined waypoints
+
+## 4. Key Features
+
+### Multi-Camera Surveillance System
+- Real-time UDP multicast streaming
+- Grid view and single camera focus
+- Individual camera controls
+- Auto-switching between cameras
+- Snapshot and recording capabilities
+
+### Fleet Management Dashboard
+- Real-time robot status monitoring
+- Task assignment and tracking
+- Performance analytics
+- Emergency controls
+
+### Order Management System
+- User-friendly order placement
+- Real-time order tracking
+- Item inventory management
+- Task automation
+
+### Admin Dashboard
+- System-wide monitoring
+- User management
+- Fleet analytics
+- Camera system control
+
+## 5. Network Architecture
+
+### Ports & Protocols
+- **Web Server**: HTTP :5000
+- **Database**: PostgreSQL :5432 (20.249.209.1)
+- **Global Camera**: UDP :5000 (224.1.1.1)
+- **HanaBot 3 Camera**: UDP :5003 (224.1.1.1)
+- **HanaBot 8 Camera**: UDP :5008 (224.1.1.1)
+- **HanaBot 9 Camera**: UDP :5009 (224.1.1.1)
+- **ROS2**: DDS communication
+
+### Communication Patterns
+- **Web ↔ Database**: Direct SQL connections
+- **Web ↔ Fleet**: HTTP API calls
+- **Fleet ↔ Robots**: ROS2 topics/services
+- **Cameras ↔ Web**: UDP multicast streams
+- **Users ↔ System**: HTTP/WebSocket
+
+## 6. Deployment Architecture
+
+### Single Robot Mode (run_server.py)
+- Direct robot control
+- Simplified architecture
+- Development/testing setup
+
+### Fleet Mode (run_fleet.py)
+- Multi-robot coordination
+- Scalable architecture
+- Production deployment
+
+This architecture provides a comprehensive, scalable fleet management system with integrated multi-camera surveillance, real-time monitoring, and efficient task automation.
