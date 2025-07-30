@@ -111,6 +111,19 @@ class DeliveryFSM(Node):
         except Exception as e:
             self.get_logger().error(f"Error getting service station for resident {resident_id}: {e}")
             return None
+    
+    def _handle_navigation_failure(self):
+        """Handle navigation failure - reset to IDLE and report failure"""
+        self.get_logger().error(f"Navigation failed in step {self.step.name}. Resetting to IDLE.")
+        
+        # Reset navigation state
+        self.waypoint_nav.pinky_nav2_state = "None"
+        
+        # Report failure status to fleet manager
+        self.pub_status("navigation_failed")
+        
+        # Reset to IDLE state
+        self.set_step(Step.IDLE)
 
     def pub_status(self, text: str):
         self.stat_pub.publish(String(data=text))
@@ -148,6 +161,10 @@ class DeliveryFSM(Node):
             self.set_step(Step.WAIT_CONFIRM)
         elif self.step == Step.GO_DOCK   and self.waypoint_nav.pinky_nav2_state == "Done":
             self.set_step(Step.IDLE)
+        
+        # Handle navigation failures
+        elif self.waypoint_nav.pinky_nav2_state == "Failed":
+            self._handle_navigation_failure()
     
     def send_initial_status(self):
         """Send initial status to fleet manager"""

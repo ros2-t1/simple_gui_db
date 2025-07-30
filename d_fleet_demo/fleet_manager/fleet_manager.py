@@ -165,10 +165,34 @@ class FleetManager(Node):
                 except Exception as e:
                     self.get_logger().error(f"Error updating task status: {e}")
         
+        elif status_text == "navigation_failed":
+            self.get_logger().error(f"Robot {robot_id} navigation failed!")
+            self._handle_robot_failure(robot_id, robot_state)
+        
         robot_state.last_update = time.time()
         
         # Broadcast robot status to web frontend
         self.broadcast_robot_status(robot_id, status_text, robot_state.current_task_id)
+    
+    def _handle_robot_failure(self, robot_id: str, robot_state):
+        """Handle robot navigation failure"""
+        try:
+            # Mark current task as failed in database
+            if robot_state.current_task_id:
+                task_id = int(robot_state.current_task_id)
+                self.get_logger().warn(f"Marking task {task_id} as failed due to navigation failure")
+                fail_task(task_id, "Navigation failure")
+                robot_state.current_task_id = None
+            
+            # Reset robot to idle
+            robot_state.status = RobotStatus.IDLE
+            
+            # Try to assign next task if available
+            self.get_logger().info("Attempting to assign next task after failure recovery")
+            self.check_and_assign_tasks()
+            
+        except Exception as e:
+            self.get_logger().error(f"Error handling robot failure: {e}")
     
     def handle_confirm_request(self, msg: String):
         """Handle confirmation requests from web server"""

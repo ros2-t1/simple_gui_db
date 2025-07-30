@@ -181,10 +181,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 로봇 상태 폴링 함수
     function pollRobotStatus() {
-        fetch('/robot_status/robot_1')
+        const residentId = localStorage.getItem('resident_id');
+        const url = residentId ? `/robot_status/robot_1?resident_id=${residentId}` : '/robot_status/robot_1';
+        
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 console.log('Robot status response:', data);
+                console.log('Detailed status info:', {
+                    status: data.status,
+                    is_waiting_confirm: data.is_waiting_confirm,
+                    is_my_order: data.is_my_order,
+                    current_task_id: data.current_task_id
+                });
                 if (data.success) {
                     updateRobotStatus(data.status, data.is_waiting_confirm);
                 } else {
@@ -225,6 +234,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 로봇이 도착하면 팝업 표시 (상태 변화 감지 + 중복 방지)
+        console.log('Modal logic check:', {
+            isWaitingConfirm,
+            lastWaitingConfirmStatus,
+            isModalShown,
+            shouldShow: isWaitingConfirm && !lastWaitingConfirmStatus && !isModalShown
+        });
+        
         if (isWaitingConfirm && !lastWaitingConfirmStatus && !isModalShown) {
             console.log('Robot just arrived (waiting_confirm changed from false to true), showing modal!');
             showDeliveryModal();
@@ -232,6 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // waiting_confirm이 아닌 상태가 되면 모달 숨김 (로봇이 복귀 중일 때)
             console.log('Robot is no longer waiting, hiding modal if shown');
             hideDeliveryModal();
+        }
+        
+        // 디버깅용: isWaitingConfirm이 true면 강제로 모달 표시 (임시)
+        if (isWaitingConfirm && !isModalShown) {
+            console.log('DEBUG: Force showing modal because isWaitingConfirm is true');
+            showDeliveryModal();
         }
         
         // 이전 상태 업데이트
