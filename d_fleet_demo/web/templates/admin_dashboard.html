@@ -468,8 +468,55 @@
         .camera-stream {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             border-radius: 8px;
+        }
+
+        /* Global camera - larger size for 1920x1080 */
+        .global-camera .camera-stream {
+            object-fit: contain;
+        }
+
+        /* Robot cameras - maintain aspect ratio for 640x480 */
+        .robot-camera-container {
+            min-height: 200px;
+        }
+
+        .robot-camera-container .camera-stream {
+            object-fit: contain;
+            aspect-ratio: 4/3; /* 640x480 ratio */
+        }
+
+        /* Robot camera controls styling */
+        .robot-status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .robot-status-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--accent-bg);
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .robot-info {
+            flex: 1;
+        }
+
+        .robot-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .robot-controls .btn {
+            padding: 4px 8px;
+            font-size: 10px;
         }
 
         .camera-overlay {
@@ -811,7 +858,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3">
+                <div class="col-lg-6">
                     <div class="chart-container">
                         <div class="chart-header">
                             <div class="chart-title">
@@ -819,42 +866,8 @@
                                 Task Status Distribution
                             </div>
                         </div>
-                        <div class="chart-wrapper small">
+                        <div class="chart-wrapper">
                             <canvas id="statusChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3">
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <div class="chart-title">
-                                <i class="bi bi-camera-video"></i>
-                                Live Camera Feed
-                            </div>
-                            <div class="chart-controls">
-                                <button class="chart-control" onclick="startCameraStream()">
-                                    <i class="bi bi-play-fill"></i>
-                                </button>
-                                <button class="chart-control" onclick="stopCameraStream()">
-                                    <i class="bi bi-stop-fill"></i>
-                                </button>
-                                <button class="chart-control" onclick="showSection('camera')">
-                                    <i class="bi bi-arrows-fullscreen"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="chart-wrapper small">
-                            <div id="camera-preview-container" style="width: 100%; height: 100%; background: var(--accent-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
-                                <div id="camera-preview-placeholder" style="color: var(--text-muted); font-size: 12px; text-align: center;">
-                                    <i class="bi bi-camera-video" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
-                                    Camera Preview
-                                    <div style="font-size: 10px; margin-top: 4px; opacity: 0.7;">Click play to start</div>
-                                </div>
-                                <img id="camera-preview-stream" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" />
-                                <div id="camera-preview-status" style="position: absolute; bottom: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 3px; font-size: 9px; display: none;">
-                                    <i class="bi bi-record-circle" style="color: #ff4444;"></i> LIVE
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1128,15 +1141,16 @@
 
             <!-- Camera Grid Layout -->
             <div id="camera-grid-layout">
+                <!-- Main Global Camera Row -->
                 <div class="row">
-                    <div class="col-lg-6">
-                        <!-- Global Camera -->
+                    <div class="col-lg-8">
+                        <!-- Global Camera (Large) -->
                         <div class="chart-container camera-grid-item" data-camera="global">
                             <div class="chart-header">
                                 <div class="chart-title">
                                     <i class="bi bi-globe"></i>
                                     Global Camera
-                                    <span class="badge bg-secondary ms-2" style="font-size: 9px;">Main View</span>
+                                    <span class="badge bg-secondary ms-2" style="font-size: 9px;">Main View - 1920x1080</span>
                                 </div>
                                 <div class="chart-controls">
                                     <button class="chart-control" onclick="startSpecificCamera('global')">
@@ -1150,12 +1164,12 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="chart-wrapper small">
-                                <div class="camera-stream-container" id="camera-container-global">
+                            <div class="chart-wrapper" style="height: 360px;">
+                                <div class="camera-stream-container global-camera" id="camera-container-global">
                                     <div class="camera-placeholder" id="camera-placeholder-global">
                                         <i class="bi bi-camera-video"></i>
                                         <div>Global Camera</div>
-                                        <div class="small">Port: 5000</div>
+                                        <div class="small">1920x1080 - Port: 5000</div>
                                     </div>
                                     <img class="camera-stream" id="camera-stream-global" style="display: none;" />
                                     <div class="camera-overlay" id="camera-overlay-global" style="display: none;">
@@ -1168,9 +1182,64 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-4">
+                        <!-- Robot Cameras Status Panel -->
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-robot"></i>
+                                    Robot Cameras Status
+                                </div>
+                            </div>
+                            <div class="chart-wrapper" style="height: 360px; padding: 15px;">
+                                <div class="robot-camera-info">
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
+                                        <i class="bi bi-info-circle"></i> Individual controls available on each camera
+                                    </div>
+                                    <div class="robot-status-list">
+                                        <div class="robot-status-item" id="robot-status-hanabot_3">
+                                            <span class="status-dot offline"></span>
+                                            <div class="robot-info">
+                                                <div style="font-weight: 600;">HanaBot 3</div>
+                                                <div style="font-size: 11px; color: var(--text-muted);">Station A - Port: 5003</div>
+                                            </div>
+                                        </div>
+                                        <div class="robot-status-item" id="robot-status-hanabot_8">
+                                            <span class="status-dot offline"></span>
+                                            <div class="robot-info">
+                                                <div style="font-weight: 600;">HanaBot 8</div>
+                                                <div style="font-size: 11px; color: var(--text-muted);">Station B - Port: 5008</div>
+                                            </div>
+                                        </div>
+                                        <div class="robot-status-item" id="robot-status-hanabot_9">
+                                            <span class="status-dot offline"></span>
+                                            <div class="robot-info">
+                                                <div style="font-weight: 600;">HanaBot 9</div>
+                                                <div style="font-size: 11px; color: var(--text-muted);">Station C - Port: 5009</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 30px; padding: 15px; background: var(--accent-bg); border-radius: 6px;">
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">QUICK ACTIONS</div>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button class="btn btn-sm btn-outline-success" onclick="startRobotCameras()" style="flex: 1; font-size: 10px;">
+                                                <i class="bi bi-play-fill"></i> Start All
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="stopRobotCameras()" style="flex: 1; font-size: 10px;">
+                                                <i class="bi bi-stop-fill"></i> Stop All
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Robot Cameras Row -->
+                <div class="row" style="margin-top: 15px;">
+                    <div class="col-lg-4">
                         <!-- HanaBot 3 Camera -->
-                        <div class="chart-container camera-grid-item" data-camera="hanabot_3">
+                        <div class="chart-container camera-grid-item robot-camera" data-camera="hanabot_3">
                             <div class="chart-header">
                                 <div class="chart-title">
                                     <i class="bi bi-robot"></i>
@@ -1189,12 +1258,12 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="chart-wrapper small">
-                                <div class="camera-stream-container" id="camera-container-hanabot_3">
+                            <div class="chart-wrapper small" style="height: 240px;">
+                                <div class="camera-stream-container robot-camera-container" id="camera-container-hanabot_3">
                                     <div class="camera-placeholder" id="camera-placeholder-hanabot_3">
                                         <i class="bi bi-robot"></i>
                                         <div>HanaBot 3</div>
-                                        <div class="small">Port: 50003</div>
+                                        <div class="small">640x480 - Port: 5003</div>
                                     </div>
                                     <img class="camera-stream" id="camera-stream-hanabot_3" style="display: none;" />
                                     <div class="camera-overlay" id="camera-overlay-hanabot_3" style="display: none;">
@@ -1207,55 +1276,14 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-lg-6">
-                        <!-- HanaBot 7 Camera -->
-                        <div class="chart-container camera-grid-item" data-camera="hanabot_7">
-                            <div class="chart-header">
-                                <div class="chart-title">
-                                    <i class="bi bi-robot"></i>
-                                    HanaBot 7
-                                    <span class="badge bg-success ms-2" style="font-size: 9px;">Station B</span>
-                                </div>
-                                <div class="chart-controls">
-                                    <button class="chart-control" onclick="startSpecificCamera('hanabot_7')">
-                                        <i class="bi bi-play-fill"></i>
-                                    </button>
-                                    <button class="chart-control" onclick="stopSpecificCamera('hanabot_7')">
-                                        <i class="bi bi-stop-fill"></i>
-                                    </button>
-                                    <button class="chart-control" onclick="focusCamera('hanabot_7')">
-                                        <i class="bi bi-arrows-fullscreen"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="chart-wrapper small">
-                                <div class="camera-stream-container" id="camera-container-hanabot_7">
-                                    <div class="camera-placeholder" id="camera-placeholder-hanabot_7">
-                                        <i class="bi bi-robot"></i>
-                                        <div>HanaBot 7</div>
-                                        <div class="small">Port: 5007</div>
-                                    </div>
-                                    <img class="camera-stream" id="camera-stream-hanabot_7" style="display: none;" />
-                                    <div class="camera-overlay" id="camera-overlay-hanabot_7" style="display: none;">
-                                        <i class="bi bi-record-circle"></i> LIVE
-                                    </div>
-                                    <div class="camera-status" id="camera-status-hanabot_7">
-                                        <span class="status-dot offline"></span> Offline
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-4">
                         <!-- HanaBot 8 Camera -->
-                        <div class="chart-container camera-grid-item" data-camera="hanabot_8">
+                        <div class="chart-container camera-grid-item robot-camera" data-camera="hanabot_8">
                             <div class="chart-header">
                                 <div class="chart-title">
                                     <i class="bi bi-robot"></i>
                                     HanaBot 8
-                                    <span class="badge bg-warning ms-2" style="font-size: 9px;">Station C</span>
+                                    <span class="badge bg-success ms-2" style="font-size: 9px;">Station B</span>
                                 </div>
                                 <div class="chart-controls">
                                     <button class="chart-control" onclick="startSpecificCamera('hanabot_8')">
@@ -1269,18 +1297,57 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="chart-wrapper small">
-                                <div class="camera-stream-container" id="camera-container-hanabot_8">
+                            <div class="chart-wrapper small" style="height: 240px;">
+                                <div class="camera-stream-container robot-camera-container" id="camera-container-hanabot_8">
                                     <div class="camera-placeholder" id="camera-placeholder-hanabot_8">
                                         <i class="bi bi-robot"></i>
                                         <div>HanaBot 8</div>
-                                        <div class="small">Port: 5008</div>
+                                        <div class="small">640x480 - Port: 5008</div>
                                     </div>
                                     <img class="camera-stream" id="camera-stream-hanabot_8" style="display: none;" />
                                     <div class="camera-overlay" id="camera-overlay-hanabot_8" style="display: none;">
                                         <i class="bi bi-record-circle"></i> LIVE
                                     </div>
                                     <div class="camera-status" id="camera-status-hanabot_8">
+                                        <span class="status-dot offline"></span> Offline
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <!-- HanaBot 9 Camera -->
+                        <div class="chart-container camera-grid-item robot-camera" data-camera="hanabot_9">
+                            <div class="chart-header">
+                                <div class="chart-title">
+                                    <i class="bi bi-robot"></i>
+                                    HanaBot 9
+                                    <span class="badge bg-warning ms-2" style="font-size: 9px;">Station C</span>
+                                </div>
+                                <div class="chart-controls">
+                                    <button class="chart-control" onclick="startSpecificCamera('hanabot_9')">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="stopSpecificCamera('hanabot_9')">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </button>
+                                    <button class="chart-control" onclick="focusCamera('hanabot_9')">
+                                        <i class="bi bi-arrows-fullscreen"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper small" style="height: 240px;">
+                                <div class="camera-stream-container robot-camera-container" id="camera-container-hanabot_9">
+                                    <div class="camera-placeholder" id="camera-placeholder-hanabot_9">
+                                        <i class="bi bi-robot"></i>
+                                        <div>HanaBot 9</div>
+                                        <div class="small">640x480 - Port: 5009</div>
+                                    </div>
+                                    <img class="camera-stream" id="camera-stream-hanabot_9" style="display: none;" />
+                                    <div class="camera-overlay" id="camera-overlay-hanabot_9" style="display: none;">
+                                        <i class="bi bi-record-circle"></i> LIVE
+                                    </div>
+                                    <div class="camera-status" id="camera-status-hanabot_9">
                                         <span class="status-dot offline"></span> Offline
                                     </div>
                                 </div>

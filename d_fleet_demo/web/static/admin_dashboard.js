@@ -786,8 +786,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cameraNames = {
                 'global': 'Global Camera - Main View',
                 'hanabot_3': 'HanaBot 3 - Station A',
-                'hanabot_7': 'HanaBot 7 - Station B',
-                'hanabot_8': 'HanaBot 8 - Station C'
+                'hanabot_8': 'HanaBot 8 - Station B',
+                'hanabot_9': 'HanaBot 9 - Station C'
             };
             singleTitle.textContent = cameraNames[cameraId] || `Camera ${cameraId}`;
         }
@@ -845,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function startAutoSwitch() {
         if (autoSwitchInterval) return;
         
-        const cameras = ['global', 'hanabot_3', 'hanabot_7', 'hanabot_8'];
+        const cameras = ['global', 'hanabot_3', 'hanabot_8', 'hanabot_9'];
         let currentIndex = 0;
         
         autoSwitchInterval = setInterval(() => {
@@ -902,6 +902,65 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('All snapshots saved', 'success');
         }, 1000);
     };
+
+    // Robot camera control functions
+    window.startRobotCameras = async () => {
+        const robotCameras = ['hanabot_3', 'hanabot_8', 'hanabot_9'];
+        let successCount = 0;
+        
+        for (const cameraId of robotCameras) {
+            try {
+                const response = await fetch(`/camera/start/${cameraId}`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.status === 'success' || result.status === 'already_active') {
+                    activeCameras[cameraId] = true;
+                    updateCameraUI(cameraId, true);
+                    updateRobotStatus(cameraId, true);
+                    successCount++;
+                }
+            } catch (error) {
+                console.error(`Failed to start ${cameraId}:`, error);
+            }
+        }
+        
+        showNotification(`Started ${successCount}/${robotCameras.length} robot cameras`, 'success');
+        updateCameraStatusTable();
+    };
+
+    window.stopRobotCameras = async () => {
+        const robotCameras = ['hanabot_3', 'hanabot_8', 'hanabot_9'];
+        let successCount = 0;
+        
+        for (const cameraId of robotCameras) {
+            try {
+                const response = await fetch(`/camera/stop/${cameraId}`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.status === 'success' || result.status === 'already_inactive') {
+                    activeCameras[cameraId] = false;
+                    updateCameraUI(cameraId, false);
+                    updateRobotStatus(cameraId, false);
+                    successCount++;
+                }
+            } catch (error) {
+                console.error(`Failed to stop ${cameraId}:`, error);
+            }
+        }
+        
+        showNotification(`Stopped ${successCount}/${robotCameras.length} robot cameras`, 'success');
+        updateCameraStatusTable();
+    };
+
+    function updateRobotStatus(cameraId, isOnline) {
+        const statusElement = document.getElementById(`robot-status-${cameraId}`);
+        if (statusElement) {
+            const statusDot = statusElement.querySelector('.status-dot');
+            if (statusDot) {
+                statusDot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
+            }
+        }
+    }
 
     function updateCameraUI(cameraId, isActive) {
         const placeholder = document.getElementById(`camera-placeholder-${cameraId}`);
@@ -1073,8 +1132,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const cameraNames = {
             'global': 'Global Camera',
             'hanabot_3': 'HanaBot 3',
-            'hanabot_7': 'HanaBot 7', 
-            'hanabot_8': 'HanaBot 8'
+            'hanabot_8': 'HanaBot 8', 
+            'hanabot_9': 'HanaBot 9'
         };
         
         showNotification(`Motion detected on ${cameraNames[cameraId]}`, 'warning');
