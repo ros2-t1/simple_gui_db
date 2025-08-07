@@ -1,0 +1,46 @@
+name: hana_bridge
+from_domain: 129
+to_domain: 18
+
+topics:
+  # Robot 1 communication
+  robot_1/user_cmd:
+    type: std_msgs/msg/String
+    from_domain: 129
+    to_domain: 18
+    
+  robot_1/status:
+    type: std_msgs/msg/String
+    from_domain: 18
+    to_domain: 129
+    
+  robot_1/confirm_request:
+    type: std_msgs/msg/String
+    from_domain: 129
+    to_domain: 18
+    
+  robot_1/confirm_response:
+    type: std_msgs/msg/String
+    from_domain: 18
+    to_domain: 129
+
+  # Robot 2 communication
+  robot_2/user_cmd:
+    type: std_msgs/msg/String
+    from_domain: 129
+    to_domain: 19
+    
+  robot_2/status:
+    type: std_msgs/msg/String
+    from_domain: 19
+    to_domain: 129
+    
+  robot_2/confirm_request:
+    type: std_msgs/msg/String
+    from_domain: 129
+    to_domain: 19
+    
+  robot_2/confirm_response:
+    type: std_msgs/msg/String
+    from_domain: 19
+    to_domain: 129

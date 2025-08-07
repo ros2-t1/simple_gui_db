@@ -16,6 +16,7 @@ from shared.fleet_msgs import TaskRequest, TaskResponse, RobotState, TaskStatus,
 # Add web directory to path for database access
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web'))
 from task_db import get_next_pending_task, update_task_status, complete_task, get_robot_current_task, get_timeout_tasks, fail_task
+from db import query_db
 
 class FleetManager(Node):
     def __init__(self):
@@ -62,7 +63,77 @@ class FleetManager(Node):
         # Robot status broadcast (for web frontend)
         self.robot_status_pub = self.create_publisher(String, '/fleet/robot_status', 10)
         
+        # Recovery: Reset stuck 'assigned' tasks on startup (one-time)
+        self.recovery_timer = self.create_timer(5.0, self.recover_stuck_assignments)
+        
         self.get_logger().info("Fleet Manager initialized")
+    
+    def _sync_robot_states_with_db(self):
+        """Synchronize robot states with database to prevent double assignments"""
+        try:
+            for robot_id, robot_state in self.robots.items():
+                robot_db_id = self.robot_name_to_id.get(robot_id)
+                if not robot_db_id:
+                    continue
+                
+                # Get current task from database
+                current_db_task = get_robot_current_task(robot_db_id)
+                
+                if current_db_task:
+                    # Robot has task in database - update local state
+                    if robot_state.current_task_id != str(current_db_task['task_id']):
+                        self.get_logger().info(f"SYNC: {robot_id} DB task {current_db_task['task_id']} != local {robot_state.current_task_id}")
+                        robot_state.current_task_id = str(current_db_task['task_id'])
+                        robot_state.status = RobotStatus.BUSY
+                else:
+                    # No task in database - robot should be idle if not currently working
+                    if robot_state.current_task_id and robot_state.status == RobotStatus.IDLE:
+                        self.get_logger().info(f"SYNC: {robot_id} clearing completed task {robot_state.current_task_id}")
+                        robot_state.current_task_id = None
+                        
+        except Exception as e:
+            self.get_logger().error(f"Error syncing robot states: {e}")
+    
+    def recover_stuck_assignments(self):
+        """Reset stuck 'assigned' tasks back to 'pending' for reprocessing"""
+        try:
+            # Find tasks that are 'assigned' but robot is idle (stuck assignments)
+            with query_db() as cur:
+                cur.execute("""
+                    SELECT task_id, assigned_bot_id 
+                    FROM tasks 
+                    WHERE status = '할당'
+                    AND created_at < NOW() - INTERVAL '2 minutes'
+                """)
+                stuck_tasks = cur.fetchall()
+                
+                for task_id, bot_id in stuck_tasks:
+                    # Check if robot is actually idle
+                    robot_name = None
+                    for rname, rid in self.robot_name_to_id.items():
+                        if rid == bot_id:
+                            robot_name = rname
+                            break
+                    
+                    if robot_name and self.robots[robot_name].status == RobotStatus.IDLE:
+                        self.get_logger().warn(f"🔄 Recovering stuck assignment: Task {task_id}")
+                        # Reset to pending for reprocessing
+                        cur.execute("""
+                            UPDATE tasks 
+                            SET status = '대기', assigned_bot_id = NULL
+                            WHERE task_id = %s
+                        """, (task_id,))
+                        
+                        # Clear local state
+                        self.robots[robot_name].current_task_id = None
+                        
+        except Exception as e:
+            self.get_logger().error(f"Error recovering stuck assignments: {e}")
+        
+        # Only run once at startup, then disable
+        if hasattr(self, 'recovery_timer'):
+            self.destroy_timer(self.recovery_timer)
+            self.recovery_timer = None
     
     def setup_robot_communication(self):
         """Setup communication channels for each robot"""
@@ -103,14 +174,29 @@ class FleetManager(Node):
     def check_and_assign_tasks(self):
         """Check for pending tasks and assign to available robots (FIFO)"""
         try:
-            # Find available robots (IDLE or returning to dock without current task)
+            # First, synchronize robot states with database to avoid double assignments
+            self._sync_robot_states_with_db()
+            
+            # Find available robots (IDLE and not having any current task in DB)
             available_robots = []
             for robot_id, robot_state in self.robots.items():
-                if robot_state.status == RobotStatus.IDLE:
+                robot_db_id = self.robot_name_to_id.get(robot_id)
+                if not robot_db_id:
+                    continue
+                    
+                # Check database for current task assignment
+                current_db_task = get_robot_current_task(robot_db_id)
+                
+                if current_db_task:
+                    # Robot has an active task in database - NOT available
+                    self.get_logger().info(f"DEBUG: {robot_id} has active DB task {current_db_task['task_id']} - NOT available")
+                    # Update local state to match database
+                    self.robots[robot_id].status = RobotStatus.BUSY
+                    self.robots[robot_id].current_task_id = str(current_db_task['task_id'])
+                elif robot_state.status == RobotStatus.IDLE:
+                    # Robot is idle and has no database task - available
                     available_robots.append(robot_id)
-                elif robot_state.status == RobotStatus.BUSY and not robot_state.current_task_id:
-                    # Robot is returning to dock but has no current task - can interrupt
-                    available_robots.append(robot_id)
+                    self.get_logger().info(f"DEBUG: {robot_id} is IDLE and no DB task - available")
             
             self.get_logger().info(f"DEBUG: Checking tasks - available_robots: {available_robots}")
             
@@ -130,19 +216,29 @@ class FleetManager(Node):
             robot_id = available_robots[0]
             robot_db_id = self.robot_name_to_id[robot_id]
             
-            # Update database
+            # Double-check: make sure this robot still doesn't have a task (race condition prevention)
+            double_check_task = get_robot_current_task(robot_db_id)
+            if double_check_task:
+                self.get_logger().warn(f"RACE CONDITION PREVENTED: {robot_id} got task {double_check_task['task_id']} between checks")
+                return
+            
+            # Update database first (atomically assign task)
             update_task_status(next_task['task_id'], 'assigned', robot_db_id)
             
             # Update robot state
             self.robots[robot_id].status = RobotStatus.BUSY
             self.robots[robot_id].current_task_id = str(next_task['task_id'])
             
-            # Send command to robot with resident_id and task_type
+            # Send command to robot with resident_id, task_type, and coordinates
             if next_task['task_type'] in ['배달', '호출']:
+                # Get target coordinates for the resident
+                target_coords = self._get_service_station_coords(next_task['requester_resident_id'])
+                
                 cmd_data = {
                     "command": "order",
                     "resident_id": next_task['requester_resident_id'],
-                    "task_type": next_task['task_type']
+                    "task_type": next_task['task_type'],
+                    "target_coordinates": target_coords
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
@@ -172,15 +268,54 @@ class FleetManager(Node):
             # Note: Task completion is now handled in handle_confirm_request()
             # idle means robot returned to dock after completing all tasks
             
-        elif status_text in ["moving_to_arm", "picking", "moving_to_user", "waiting_confirm"]:
+        elif status_text in ["moving_to_arm", "moving_to_user"]:
             robot_state.status = RobotStatus.BUSY
             
-            # Update task status in database
+            # Update task status in database to 이동중
             if robot_state.current_task_id:
                 try:
-                    update_task_status(int(robot_state.current_task_id), 'in_progress')
+                    with query_db() as cur:
+                        cur.execute("""
+                            UPDATE tasks 
+                            SET status = '이동중'
+                            WHERE task_id = %s
+                        """, (int(robot_state.current_task_id),))
+                    self.get_logger().info(f"Updated task {robot_state.current_task_id} to 이동중 status")
                 except Exception as e:
-                    self.get_logger().error(f"Error updating task status: {e}")
+                    self.get_logger().error(f"Error updating task to moving: {e}")
+        
+        elif status_text == "picking":
+            robot_state.status = RobotStatus.BUSY
+            
+            # Update task status in database to 집기중  
+            if robot_state.current_task_id:
+                try:
+                    with query_db() as cur:
+                        cur.execute("""
+                            UPDATE tasks 
+                            SET status = '집기중'
+                            WHERE task_id = %s
+                        """, (int(robot_state.current_task_id),))
+                    self.get_logger().info(f"Updated task {robot_state.current_task_id} to 집기중 status")
+                except Exception as e:
+                    self.get_logger().error(f"Error updating task to picking: {e}")
+        
+        elif status_text == "waiting_confirm":
+            robot_state.status = RobotStatus.BUSY
+            
+            # Robot arrived at user location - update DB to 수령대기 
+            if robot_state.current_task_id:
+                try:
+                    # Map waiting_confirm to Korean DB status
+                    with query_db() as cur:
+                        cur.execute("""
+                            UPDATE tasks 
+                            SET status = '수령대기'
+                            WHERE task_id = %s
+                        """, (int(robot_state.current_task_id),))
+                    self.get_logger().info(f"Updated task {robot_state.current_task_id} to 수령대기 status")
+                except Exception as e:
+                    self.get_logger().error(f"Error updating task to waiting_confirm: {e}")
         
         elif status_text == "returning_to_dock":
             robot_state.status = RobotStatus.BUSY
@@ -246,11 +381,14 @@ class FleetManager(Node):
                 robot_state.status = RobotStatus.BUSY
                 robot_state.current_task_id = str(next_task['task_id'])
                 
-                # Send order command with resident_id and task_type
+                # Send order command with resident_id, task_type, and coordinates
+                target_coords = self._get_service_station_coords(next_task['requester_resident_id'])
+                
                 cmd_data = {
                     "command": "order",
                     "resident_id": next_task['requester_resident_id'],
-                    "task_type": next_task['task_type']
+                    "task_type": next_task['task_type'],
+                    "target_coordinates": target_coords
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
@@ -321,30 +459,30 @@ class FleetManager(Node):
                 
                 self.get_logger().warn(f"Task {task_id} has timed out after {minutes_elapsed:.1f} minutes")
                 
-                # # Mark task as failed in database
-                # fail_task(task_id, f"Timeout after {minutes_elapsed:.1f} minutes")
+                # Reset task to pending state instead of failing it
+                update_task_status(task_id, 'pending')
                 
-                # # Reset robot to idle if it was assigned to this task
-                # for rid, robot_state in self.robots.items():
-                #     if robot_state.current_task_id == str(task_id):
-                #         robot_state.current_task_id = None
-                #         robot_state.status = RobotStatus.IDLE
-                #         self.get_logger().info(f"Reset {rid} to idle due to task timeout")
+                # Reset robot to idle if it was assigned to this task
+                for rid, robot_state in self.robots.items():
+                    if robot_state.current_task_id == str(task_id):
+                        robot_state.current_task_id = None
+                        robot_state.status = RobotStatus.IDLE
+                        self.get_logger().info(f"Reset {rid} to idle due to task timeout")
                         
-                #         # Send stop command to robot
-                #         try:
-                #             cmd_msg = String(data="stop")
-                #             if rid in self.robot_cmd_pubs:
-                #                 self.robot_cmd_pubs[rid].publish(cmd_msg)
-                #                 self.get_logger().info(f"Sent stop command to {rid} due to timeout")
-                #         except Exception as e:
-                #             self.get_logger().error(f"Failed to send stop command to {rid}: {e}")
+                        # Send stop command to robot
+                        try:
+                            cmd_msg = String(data="stop")
+                            if rid in self.robot_cmd_pubs:
+                                self.robot_cmd_pubs[rid].publish(cmd_msg)
+                                self.get_logger().info(f"Sent stop command to {rid} due to timeout")
+                        except Exception as e:
+                            self.get_logger().error(f"Failed to send stop command to {rid}: {e}")
                         
-                #         # Broadcast updated status
-                #         self.broadcast_robot_status(rid, "idle")
-                #         break
+                        # Broadcast updated status
+                        self.broadcast_robot_status(rid, "idle")
+                        break
                 
-                # self.get_logger().info(f"Task {task_id} marked as failed due to timeout")
+                self.get_logger().info(f"Task {task_id} reset to pending due to timeout")
             
             if timeout_tasks:
                 # Try to assign new tasks after handling timeouts
@@ -358,6 +496,40 @@ class FleetManager(Node):
         if int(current_time) % 5 == 0:  # Every 5 seconds
             for robot_id, robot_state in self.robots.items():
                 self.get_logger().info(f"Robot {robot_id}: {robot_state.status.value}, last_update: {current_time - robot_state.last_update:.1f}s ago")
+    
+    def _get_service_station_coords(self, resident_id):
+        """Get service station coordinates for the given resident"""
+        try:
+            with query_db() as cur:
+                cur.execute("""
+                    SELECT l.coordinates 
+                    FROM residents r 
+                    JOIN locations l ON r.service_station_id = l.location_id 
+                    WHERE r.resident_id = %s
+                """, (resident_id,))
+                result = cur.fetchone()
+                
+                if result:
+                    coordinates = result[0]  # PostgreSQL array format: {x,y,z}
+                    return self._parse_coordinates(coordinates)
+                else:
+                    self.get_logger().warn(f"No service station found for resident {resident_id}, using default coordinates")
+                    # return [0.1, 0.78, -0.707]  # Default SERVICE_ST1 coordinates
+                    return None
+        except Exception as e:
+            self.get_logger().error(f"Error getting service station for resident {resident_id}: {e}, using default coordinates")
+            # return [0.1, 0.78, -0.707]  # Fallback to default coordinates
+            return None
+    
+    def _parse_coordinates(self, coords):
+        """Parse PostgreSQL array format {x,y,z} to Python list [x,y,z]"""
+        if isinstance(coords, list):
+            return coords
+        if isinstance(coords, str):
+            # Remove braces and split by comma
+            clean_coords = coords.strip('{}')
+            return [float(x.strip()) for x in clean_coords.split(',')]
+        return coords
 
 def main():
     rclpy.init()

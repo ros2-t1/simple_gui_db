@@ -1,0 +1,259 @@
+HANA 로봇 시스템 인터페이스 명세서
+
+1. 시스템 개요
+
+HANA 로봇 시스템은 의료/요양 시설에서 입소자에게 물품 배달, 호출 응답 등의 서비스를 제공하는 자율 로봇 시스템입니다. 
+
+2. 사용자 인터페이스
+
+2.1 입소자/관리자 공통 GUI
+
+2.1.1 로그인
+
+POST /api/login
+Request: { login_id, password }
+Response: { 
+  token, 
+  resident_info: {
+    resident_id,
+    name,
+    login_id,
+    assigned_room_id,
+    service_station_id,
+    is_admin: boolean
+  }
+}
+
+
+2.1.2 로봇 상태 모니터링 (관리자만)
+
+GET /api/robots/status
+Response: [{
+  hana_bot_id,
+  bot_name,
+  battery,
+  status: "충전중" | "작업중" | "대기중" | "복귀중"
+}]
+
+
+2.1.3 예약 작업 관리 (관리자만)
+
+예약 작업 생성
+
+POST /api/reserved-tasks
+Request: {
+  task_type: "식사 배달" | "물품 배달",
+  requester_resident_id,
+  item_id,
+  target_location,
+  scheduled_time
+}
+Response: { reserved_task_id, success }
+
+
+예약 작업 조회/수정/삭제
+
+GET /api/reserved-tasks
+PUT /api/reserved-tasks/{id}
+DELETE /api/reserved-tasks/{id}
+
+
+2.1.4 작업 이력 관리
+
+GET /api/tasks/history
+Query Parameters: { resident_id? } // 관리자는 전체, 입소자는 본인 것만
+Response: [{ 
+  task_id, 
+  task_type: "배달" | "호출",
+  status: "대기" | "할당" | "집기중" | "이동중" | "수령대기" | "완료" | "실패",
+  requester_resident_id,
+  item_id?,
+  assigned_bot_id?,
+  created_at, 
+  completed_at?
+}]
+
+
+2.1.5 물품 요청 (입소자)
+
+POST /api/tasks/delivery
+Request: {
+  item_id, // items 테이블의 ID 직접 참조
+  scheduled_time? // 즉시 요청시 null (예약 작업으로 생성)
+}
+Response: { task_id, estimated_arrival }
+
+
+2.1.6 로봇 호출 (입소자)
+
+POST /api/tasks/call
+Request: { message? }
+Response: { task_id, estimated_arrival }
+
+
+2.1.7 작업 완료 처리 (입소자)
+
+POST /api/tasks/{task_id}/complete
+Request: { 
+  completion_status: "완료" | "실패",
+  failure_reason?
+}
+Response: { success }
+
+
+3. 로봇 시스템 인터페이스
+
+3.1 작업 할당 API
+
+3.1.1 작업 요청
+
+GET /api/robot/tasks/pending
+Response: [{
+  task_id,
+  task_type: "배달" | "호출",
+  status: "대기" | "할당" | "집기중" | "이동중" | "수령대기",
+  requester_resident_id,
+  item_id?, // 배달 작업일 때만
+  target_location_id?, // 배달일 때 목적지, 호출일 때는 요청자의 service_station_id
+  source_reserved_task_id?, // 예약 기반인 경우
+  priority
+}]
+
+
+3.1.2 작업 수락
+
+POST /api/robot/tasks/{task_id}/accept
+Request: { hana_bot_id }
+Response: { success, task_details }
+
+
+3.1.3 작업 상태 업데이트
+
+PUT /api/robot/tasks/{task_id}/status
+Request: { 
+  hana_bot_id,
+  status: "할당" | "집기중" | "이동중" | "수령대기" | "완료" | "실패",
+  failure_reason?
+}
+Response: { success }
+
+
+3.2 로봇 상태 관리
+
+3.2.1 상태 업데이트
+
+PUT /api/robot/{hana_bot_id}/status
+Request: {
+  battery,
+  status: "충전중" | "작업중" | "대기중" | "복귀중",
+  current_coordinates?: [x, y, z] // coordinates 배열 형태
+}
+Response: { success }
+
+
+3.2.2 배터리 상태 보고
+
+POST /api/robot/{hana_bot_id}/battery-status
+Request: { current_battery }
+Response: { 
+  action: "continue" | "return_to_charge",
+  charging_station?: { location_id, coordinates }
+}
+
+
+4. 위치 및 재고 관리 API
+
+4.1 위치 정보
+
+GET /api/locations
+Response: [{
+  location_id,
+  location_type: "서비스 스테이션" | "픽업 스테이션" | "충전 스테이션" | "선반",
+  location_name,
+  coordinates: [x, y, z] // double precision 배열
+}]
+
+
+4.2 물품 재고 관리
+
+GET /api/items/inventory
+Response: [{
+  item_id,
+  item_type: "물" | "영양제" | "생필품" | "식판",
+  item_quantity
+}]
+
+PUT /api/items/{item_id}/quantity
+Request: { new_quantity }
+Response: { success, updated_item }
+
+
+5. 로그인 보안 및 감사
+
+5.1 로그인 로그 기록
+
+GET /api/login-logs
+Query Parameters: { 
+  resident_id?, 
+  success?, 
+  start_date?, 
+  end_date? 
+}
+Response: [{
+  id,
+  resident_id,
+  success,
+  client_ip,
+  login_time
+}]
+
+
+6. 실시간 모니터링
+
+6.1 WebSocket 연결
+
+WebSocket: /ws/monitor
+Events:
+- robot_status_update: { hana_bot_id, battery, status, coordinates }
+- task_status_change: { task_id, old_status, new_status, assigned_bot_id }
+- low_battery_warning: { hana_bot_id, battery_level }
+- task_completion: { task_id, completion_status, completed_at }
+
+
+6.2 알림 시스템
+
+POST /api/notifications/send
+Request: {
+  recipient_type: "resident" | "all",
+  recipient_id?,
+  message,
+  priority: "low" | "medium" | "high"
+}
+Response: { notification_id, sent_to }
+
+
+7. 데이터 흐름
+
+7.1 예약 작업 처리 흐름
+
+입소자/관리자가 예약 작업 생성 (reserved_tasks)
+
+시스템이 scheduled_time 감지
+
+reserved_tasks → tasks 테이블로 실제 작업 생성 (source_reserved_task_id 연결)
+
+로봇에게 작업 할당 (assigned_bot_id 설정, status = "할당")
+
+로봇이 작업 진행 (status 변경: 집기중 → 이동중 → 수령대기)
+
+입소자 수령 확인 후 completed_at 업데이트 (status = "완료")
+
+7.2 호출 작업 처리 흐름
+
+입소자가 호출 요청
+
+tasks 테이블에 task_type = "호출" 작업 생성
+
+target_location_id는 입소자의 service_station_id 사용
+
+로봇이 해당 위치로 이동 완료 시 작업 완료 처리

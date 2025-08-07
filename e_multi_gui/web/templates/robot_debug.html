@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로봇 상태 디버그 도구</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .debug-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .robot-card {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            display: inline-block;
+            vertical-align: top;
+            width: 300px;
+            background: white;
+        }
+        
+        .robot-card.idle {
+            border-color: #28a745;
+        }
+        
+        .robot-card.busy {
+            border-color: #ffc107;
+        }
+        
+        .robot-card.waiting {
+            border-color: #17a2b8;
+        }
+        
+        .robot-card.error {
+            border-color: #dc3545;
+        }
+        
+        .robot-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .status-info {
+            margin: 10px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .control-group {
+            margin: 15px 0;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        select, input, button {
+            padding: 8px;
+            margin: 2px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .danger-btn {
+            background: #dc3545;
+        }
+        
+        .danger-btn:hover {
+            background: #c82333;
+        }
+        
+        .success-btn {
+            background: #28a745;
+        }
+        
+        .success-btn:hover {
+            background: #218838;
+        }
+        
+        .warning-btn {
+            background: #ffc107;
+            color: black;
+        }
+        
+        .warning-btn:hover {
+            background: #e0a800;
+        }
+        
+        .task-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .logs {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .scenario-btn {
+            padding: 10px 15px;
+            background: #6f42c1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .scenario-btn:hover {
+            background: #563d7c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 로봇 상태 디버그 도구</h1>
+        <p>실제 로봇 없이 로봇 상태를 수동으로 조작하여 플릿 시스템을 테스트할 수 있습니다.</p>
+        
+        <!-- Global Actions -->
+        <div class="debug-panel">
+            <h2>📊 전체 시스템 제어</h2>
+            <div class="quick-actions">
+                <button onclick="refreshAllStates()" class="success-btn">상태 새로고침</button>
+                <button onclick="resetAllRobots()" class="warning-btn">모든 로봇 초기화</button>
+                <button onclick="simulateDeliveryScenario()" class="scenario-btn">배달 시나리오</button>
+                <button onclick="simulateCallScenario()" class="scenario-btn">호출 시나리오</button>
+                <button onclick="simulateMultiRobot()" class="scenario-btn">다중 로봇 테스트</button>
+            </div>
+        </div>
+        
+        <!-- Robot Cards -->
+        <div id="robot-container">
+            <!-- Robot cards will be dynamically generated -->
+        </div>
+        
+        <!-- Task Management -->
+        <div class="debug-panel">
+            <h2>📋 작업 관리</h2>
+            <div id="task-container">
+                <!-- Active tasks will be shown here -->
+            </div>
+            <div class="control-group">
+                <label>테스트 작업 생성:</label>
+                <select id="test-task-type">
+                    <option value="배달">배달</option>
+                    <option value="호출">호출</option>
+                </select>
+                <input type="number" id="test-resident-id" placeholder="주민 ID" value="9999">
+                <button onclick="createTestTask()">테스트 작업 생성</button>
+            </div>
+        </div>
+        
+        <!-- Logs -->
+        <div class="debug-panel">
+            <h2>📜 디버그 로그</h2>
+            <div id="debug-logs" class="logs"></div>
+            <button onclick="clearLogs()">로그 지우기</button>
+        </div>
+    </div>
+
+    <script>
+        let robots = {};
+        let activeTasks = [];
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshAllStates();
+            setInterval(refreshAllStates, 3000); // Auto refresh every 3 seconds
+        });
+        
+        function log(message) {
+            const logsDiv = document.getElementById('debug-logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function clearLogs() {
+            document.getElementById('debug-logs').innerHTML = '';
+        }
+        
+        async function refreshAllStates() {
+            try {
+                // Get robot states
+                const robotResponse = await fetch('/robot_status');
+                const robotData = await robotResponse.json();
+                
+                if (robotData.success) {
+                    robots = robotData.robots;
+                    renderRobotCards();
+                }
+                
+                // Get active tasks
+                const tasksResponse = await fetch('/debug/active_tasks');
+                const tasksData = await tasksResponse.json();
+                
+                if (tasksData.success) {
+                    activeTasks = tasksData.tasks;
+                    renderActiveTasks();
+                }
+                
+            } catch (error) {
+                log(`❌ Error refreshing states: ${error.message}`);
+            }
+        }
+        
+        function renderRobotCards() {
+            const container = document.getElementById('robot-container');
+            container.innerHTML = '';
+            
+            Object.keys(robots).forEach(robotId => {
+                const robot = robots[robotId];
+                const card = createRobotCard(robotId, robot);
+                container.appendChild(card);
+            });
+        }
+        
+        function createRobotCard(robotId, robot) {
+            const div = document.createElement('div');
+            div.className = `robot-card ${getRobotCardClass(robot.status)}`;
+            
+            div.innerHTML = `
+                <div class="robot-title">🤖 ${robotId}</div>
+                <div class="status-info">
+                    <strong>상태:</strong> ${robot.status}<br>
+                    <strong>작업 ID:</strong> ${robot.current_task_id || '없음'}<br>
+                    <strong>최종 업데이트:</strong> ${new Date(robot.last_update * 1000).toLocaleTimeString()}
+                </div>
+                
+                <div class="control-group">
+                    <label>상태 변경:</label>
+                    <select id="status-${robotId}">
+                        <option value="idle" ${robot.status === 'idle' ? 'selected' : ''}>대기 (idle)</option>
+                        <option value="moving_to_arm" ${robot.status === 'moving_to_arm' ? 'selected' : ''}>아이템으로 이동</option>
+                        <option value="picking" ${robot.status === 'picking' ? 'selected' : ''}>집기 중</option>
+                        <option value="moving_to_user" ${robot.status === 'moving_to_user' ? 'selected' : ''}>사용자로 이동</option>
+                        <option value="waiting_confirm" ${robot.status === 'waiting_confirm' ? 'selected' : ''}>수령 대기</option>
+                        <option value="returning_to_dock" ${robot.status === 'returning_to_dock' ? 'selected' : ''}>도킹 복귀</option>
+                        <option value="error" ${robot.status === 'error' ? 'selected' : ''}>오류</option>
+                    </select>
+                    <button onclick="updateRobotStatus('${robotId}')">상태 업데이트</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>작업 ID 설정:</label>
+                    <input type="number" id="task-${robotId}" value="${robot.current_task_id || ''}" placeholder="작업 ID">
+                    <button onclick="updateTaskId('${robotId}')">작업 ID 설정</button>
+                </div>
+                
+                <div class="quick-actions">
+                    <button onclick="simulatePickup('${robotId}')" class="scenario-btn">픽업 시뮬레이션</button>
+                    <button onclick="simulateDelivery('${robotId}')" class="scenario-btn">배달 시뮬레이션</button>
+                    ${robot.status === 'waiting_confirm' ? '<button onclick="confirmDelivery(\''+robotId+'\')" class="success-btn">✅ 확인 완료</button>' : ''}
+                    <button onclick="resetRobot('${robotId}')" class="danger-btn">로봇 리셋</button>
+                </div>
+            `;
+            
+            return div;
+        }
+        
+        function getRobotCardClass(status) {
+            if (status === 'idle') return 'idle';
+            if (status === 'waiting_confirm') return 'waiting';
+            if (status === 'error') return 'error';
+            return 'busy';
+        }
+        
+        function renderActiveTasks() {
+            const container = document.getElementById('task-container');
+            container.innerHTML = '';
+            
+            if (activeTasks.length === 0) {
+                container.innerHTML = '<p>활성 작업이 없습니다.</p>';
+                return;
+            }
+            
+            activeTasks.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'task-info';
+                div.innerHTML = `
+                    <strong>작업 ${task.task_id}</strong> - ${task.task_type} 
+                    (주민 ${task.requester_resident_id}) 
+                    | 상태: ${task.status} 
+                    | 로봇: ${task.assigned_bot_id || '미할당'}
+                    <button onclick="updateTaskStatus(${task.task_id}, '완료')" style="margin-left: 10px;">완료 처리</button>
+                    <button onclick="updateTaskStatus(${task.task_id}, '실패')" class="danger-btn" style="margin-left: 5px;">실패 처리</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        async function updateRobotStatus(robotId) {
+            const newStatus = document.getElementById(`status-${robotId}`).value;
+            
+            try {
+                const response = await fetch(`/debug/robot_status/${robotId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ ${robotId} 상태를 ${newStatus}로 변경했습니다.`);
+                    refreshAllStates();
+                } else {
+                    log(`❌ ${robotId} 상태 변경 실패: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ 오류: ${error.message}`);
+            }
+        }
+        
+        async function updateTaskId(robotId) {
+            const taskId = document.getElementById(`task-${robotId}`).value;
+            
+            try {
+                const response = await fetch(`/debug/robot_task/${robotId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId || null })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ ${robotId} 작업 ID를 ${taskId || '없음'}으로 설정했습니다.`);
+                    refreshAllStates();
+                } else {
+                    log(`❌ ${robotId} 작업 ID 설정 실패: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ 오류: ${error.message}`);
+            }
+        }
+        
+        async function resetRobot(robotId) {
+            if (!confirm(`${robotId}를 초기화하시겠습니까?`)) return;
+            
+            try {
+                const response = await fetch(`/debug/robot_reset/${robotId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ ${robotId}를 초기화했습니다.`);
+                    refreshAllStates();
+                } else {
+                    log(`❌ ${robotId} 초기화 실패: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ 오류: ${error.message}`);
+            }
+        }
+        
+        async function resetAllRobots() {
+            if (!confirm('모든 로봇을 초기화하시겠습니까?')) return;
+            
+            for (let robotId of Object.keys(robots)) {
+                await resetRobot(robotId);
+            }
+            log('✅ 모든 로봇을 초기화했습니다.');
+        }
+        
+        async function createTestTask() {
+            const taskType = document.getElementById('test-task-type').value;
+            const residentId = document.getElementById('test-resident-id').value;
+            
+            if (!residentId) {
+                alert('주민 ID를 입력해주세요.');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/debug/create_test_task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        task_type: taskType, 
+                        resident_id: parseInt(residentId)
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ 테스트 작업을 생성했습니다: ${result.task_id}`);
+                    refreshAllStates();
+                } else {
+                    log(`❌ 테스트 작업 생성 실패: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ 오류: ${error.message}`);
+            }
+        }
+        
+        async function updateTaskStatus(taskId, status) {
+            try {
+                const response = await fetch(`/debug/task_status/${taskId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ 작업 ${taskId} 상태를 ${status}로 변경했습니다.`);
+                    refreshAllStates();
+                } else {
+                    log(`❌ 작업 상태 변경 실패: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ 오류: ${error.message}`);
+            }
+        }
+        
+        // Simulation scenarios
+        async function simulatePickup(robotId) {
+            log(`🎬 ${robotId} 픽업 시뮬레이션 시작...`);
+            
+            await updateRobotStatusDirect(robotId, 'moving_to_arm');
+            await sleep(2000);
+            
+            await updateRobotStatusDirect(robotId, 'picking');
+            await sleep(3000);
+            
+            await updateRobotStatusDirect(robotId, 'moving_to_user');
+            await sleep(2000);
+            
+            await updateRobotStatusDirect(robotId, 'waiting_confirm');
+            log(`✅ ${robotId} 픽업 시뮬레이션 완료 - 수령 대기 중`);
+        }
+        
+        async function simulateDelivery(robotId) {
+            log(`🎬 ${robotId} 배달 시뮬레이션 시작...`);
+            
+            await updateRobotStatusDirect(robotId, 'waiting_confirm');
+            await sleep(3000);
+            
+            await updateRobotStatusDirect(robotId, 'returning_to_dock');
+            await sleep(2000);
+            
+            await updateRobotStatusDirect(robotId, 'idle');
+            log(`✅ ${robotId} 배달 시뮬레이션 완료`);
+        }
+        
+        async function simulateDeliveryScenario() {
+            log('🎬 전체 배달 시나리오 시뮬레이션 시작...');
+            await createTestTask();
+            await sleep(1000);
+            await simulatePickup('robot_1');
+        }
+        
+        async function simulateCallScenario() {
+            log('🎬 호출 시나리오 시뮬레이션 시작...');
+            document.getElementById('test-task-type').value = '호출';
+            await createTestTask();
+            await sleep(1000);
+            await updateRobotStatusDirect('robot_1', 'moving_to_user');
+            await sleep(3000);
+            await updateRobotStatusDirect('robot_1', 'waiting_confirm');
+        }
+        
+        async function simulateMultiRobot() {
+            log('🎬 다중 로봇 시나리오 시뮬레이션 시작...');
+            
+            // Robot 1: 배달
+            document.getElementById('test-task-type').value = '배달';
+            await createTestTask();
+            await sleep(500);
+            simulatePickup('robot_1');
+            
+            // Robot 2: 호출
+            document.getElementById('test-task-type').value = '호출';
+            document.getElementById('test-resident-id').value = '9998';
+            await createTestTask();
+            await sleep(500);
+            updateRobotStatusDirect('robot_2', 'moving_to_user');
+            
+            log('✅ 다중 로봇 시나리오 실행 중...');
+        }
+        
+        async function updateRobotStatusDirect(robotId, status) {
+            const response = await fetch(`/debug/robot_status/${robotId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: status })
+            });
+            refreshAllStates();
+        }
+        
+        async function confirmDelivery(robotId) {
+            log(`🎯 ${robotId} 배달 확인 완료 처리 중...`);
+            
+            try {
+                const response = await fetch(`/debug/complete_delivery/${robotId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ ${robotId} 배달 완료: Task ${result.completed_task_id} 처리됨`);
+                    refreshAllStates();
+                } else {
+                    log(`❌ ${robotId} 배달 완료 실패: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ 배달 완료 처리 오류: ${error.message}`);
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    
+    <!-- Title -->
+    <mxCell id="title" value="Fleet Management System Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="400" y="20" width="369" height="30" as="geometry"/>
+    </mxCell>
+
+    <!-- Web Layer -->
+    <mxCell id="web_layer" value="Web Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="80" width="200" height="40" as="geometry"/>
+    </mxCell>
+    
+    <!-- Flask Web Server -->
+    <mxCell id="flask_server" value="Flask Web Server&#xa;(run_server.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="50" y="140" width="200" height="60" as="geometry"/>
+    </mxCell>
+    
+    <!-- Web Routes -->
+    <mxCell id="auth_route" value="Authentication&#xa;(auth.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="50" y="220" width="90" height="50" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="orders_route" value="Orders&#xa;(orders.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="160" y="220" width="90" height="50" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="fleet_monitor_route" value="Fleet Monitor&#xa;(fleet_monitor.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="270" y="220" width="90" height="50" as="geometry"/>
+    </mxCell>
+    
+    <!-- Database Layer -->
+    <mxCell id="db_layer" value="Database Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="300" width="200" height="40" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="postgresql" value="PostgreSQL Database&#xa;(SAP HANA compatible)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="50" y="360" width="200" height="60" as="geometry"/>
+    </mxCell>
+    
+    <!-- ROS2 Fleet Management Layer -->
+    <mxCell id="ros_layer" value="ROS2 Fleet Management" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="450" y="80" width="250" height="40" as="geometry"/>
+    </mxCell>
+    
+    <!-- Fleet Manager -->
+    <mxCell id="fleet_manager" value="Fleet Manager&#xa;(fleet_manager.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="450" y="140" width="250" height="60" as="geometry"/>
+    </mxCell>
+    
+    <!-- Robot Layer -->
+    <mxCell id="robot_layer" value="Robot Control Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="80" width="250" height="40" as="geometry"/>
+    </mxCell>
+    
+    <!-- Robot Components -->
+    <mxCell id="robot_fsm" value="Delivery FSM&#xa;(fsm.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="800" y="140" width="120" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="nav_system" value="Navigation&#xa;(nav2_waypoint_class.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="930" y="140" width="120" height="60" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="arm_control" value="Arm Control&#xa;(arm.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="800" y="220" width="120" height="50" as="geometry"/>
+    </mxCell>
+    
+    <!-- Hardware Layer -->
+    <mxCell id="hardware_layer" value="Hardware Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6e6e6;strokeColor=#999999;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="300" width="250" height="40" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="robot_hardware" value="Physical Robot&#xa;(Navigation, Arm, Sensors)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="800" y="360" width="250" height="60" as="geometry"/>
+    </mxCell>
+    
+    <!-- Communication Channels -->
+    <mxCell id="ros_topics" value="ROS2 Topics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="450" y="250" width="250" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="task_request" value="/fleet/task_request" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="450" y="290" width="120" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="robot_status" value="/robot_1/status" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="580" y="290" width="120" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="robot_cmd" value="/robot_1/user_cmd" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="450" y="330" width="120" height="30" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="confirm_topic" value="/fleet/confirm_request" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="580" y="330" width="120" height="30" as="geometry"/>
+    </mxCell>
+    
+    <!-- Data Flow Arrows -->
+    <!-- Web to DB -->
+    <mxCell id="web_to_db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1" source="flask_server" target="postgresql">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Web to Fleet Manager -->
+    <mxCell id="web_to_fleet" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;startArrow=none;startFill=0;endArrow=classic;endFill=1;" edge="1" parent="1" source="flask_server" target="fleet_manager">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Fleet Manager to Robot FSM -->
+    <mxCell id="fleet_to_robot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1" source="fleet_manager" target="robot_fsm">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Robot FSM to Navigation -->
+    <mxCell id="fsm_to_nav" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;startArrow=none;startFill=0;endArrow=classic;endFill=1;" edge="1" parent="1" source="robot_fsm" target="nav_system">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Robot FSM to Arm -->
+    <mxCell id="fsm_to_arm" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;startArrow=none;startFill=0;endArrow=classic;endFill=1;" edge="1" parent="1" source="robot_fsm" target="arm_control">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Navigation to Hardware -->
+    <mxCell id="nav_to_hw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;startArrow=none;startFill=0;endArrow=classic;endFill=1;" edge="1" parent="1" source="nav_system" target="robot_hardware">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Arm to Hardware -->
+    <mxCell id="arm_to_hw" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;entryX=0.3;entryY=0;startArrow=none;startFill=0;endArrow=classic;endFill=1;" edge="1" parent="1" source="arm_control" target="robot_hardware">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    
+    <!-- Fleet Manager to DB -->
+    <mxCell id="fleet_to_db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=1;entryX=1;entryY=0.5;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1" source="fleet_manager" target="postgresql">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="450" y="250"/>
+          <mxPoint x="400" y="250"/>
+          <mxPoint x="400" y="390"/>
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    
+    <!-- Labels for major data flows -->
+    <mxCell id="http_label" value="HTTP/REST API" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="290" y="140" width="90" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="ros_label" value="ROS2 Messages" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="710" y="140" width="80" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="db_label" value="PostgreSQL Queries" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="300" y="320" width="100" height="20" as="geometry"/>
+    </mxCell>
+    
+    <!-- Task Flow Legend -->
+    <mxCell id="legend_title" value="Task Flow Legend" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="50" y="480" width="150" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="legend_1" value="1. User places order/call via web interface" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="510" width="250" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="legend_2" value="2. Task stored in database with FIFO ordering" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="530" width="250" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="legend_3" value="3. Fleet Manager assigns task to available robot" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="550" width="250" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="legend_4" value="4. Robot FSM controls navigation and arm operations" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="570" width="250" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="legend_5" value="5. Status updates sent back through ROS2 topics" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="50" y="590" width="250" height="20" as="geometry"/>
+    </mxCell>
+    
+    <!-- Task Types -->
+    <mxCell id="task_types_title" value="Supported Task Types" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="400" y="480" width="150" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="delivery_task" value="배달 (Delivery): Go to arm → Pick item → Go to user → Wait confirm" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="400" y="510" width="350" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="call_task" value="호출 (Call): Go directly to user → Wait confirm" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="400" y="530" width="350" height="20" as="geometry"/>
+    </mxCell>
+    
+    <!-- System Features -->
+    <mxCell id="features_title" value="Key System Features" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="480" width="150" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="feature_1" value="• FIFO task queue management" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="510" width="200" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="feature_2" value="• Dynamic service station assignment" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="530" width="200" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="feature_3" value="• Real-time robot status monitoring" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="550" width="200" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="feature_4" value="• Task interruption and reassignment" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="570" width="200" height="20" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="feature_5" value="• Navigation failure recovery" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="800" y="590" width="200" height="20" as="geometry"/>
+    </mxCell>
+    
+  </root>
+</mxGraphModel>

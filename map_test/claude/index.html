@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROS2 Industrial Map Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>[ROS2] Industrial Navigation System</h1>
+            <div class="controls">
+                <button id="loadMapBtn">Load Map</button>
+                <button id="startSimBtn">Start Robot</button>
+                <button id="stopSimBtn">Stop Robot</button>
+                <input type="file" id="mapFileInput" accept=".pgm,.yaml,.json" style="display: none;">
+            </div>
+        </header>
+        
+        <main>
+            <div class="map-container">
+                <canvas id="mapCanvas" width="800" height="600"></canvas>
+                <div class="map-info">
+                    <div class="info-panel">
+                        <h3>Map Info</h3>
+                        <div id="mapStats">
+                            <p>Resolution: <span id="resolution">-</span></p>
+                            <p>Size: <span id="mapSize">-</span></p>
+                            <p>Origin: <span id="origin">-</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="robot-panel">
+                        <h3>Robot Status</h3>
+                        <div id="robotStats">
+                            <p>Position: <span id="robotPos">-</span></p>
+                            <p>Orientation: <span id="robotAngle">-</span></p>
+                            <p>Status: <span id="robotStatus">IDLE</span></p>
+                            <p>LiDAR Points: <span id="lidarPoints">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="color-box free"></span>
+                    <span>Free Space</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-box occupied"></span>
+                    <span>Occupied</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-box unknown"></span>
+                    <span>Unknown</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-box robot"></span>
+                    <span>Robot</span>
+                </div>
+                <div class="legend-item">
+                    <span class="color-box lidar"></span>
+                    <span>LiDAR Scan</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="mapVisualizer.js"></script>
+</body>
+</html>

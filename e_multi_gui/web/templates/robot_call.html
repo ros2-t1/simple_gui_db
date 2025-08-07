@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 로봇 호출 - HANA 서비스</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            padding: 15px 20px 20px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            color: white;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            font-weight: 500;
+            opacity: 0.95;
+        }
+
+        .user-info i {
+            font-size: 1.2rem;
+        }
+
+        .header-main {
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .robot-status {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .robot-status i {
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .call-options {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .call-option {
+            background: white;
+            border: 2px solid #f0f0f0;
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .call-option:hover {
+            border-color: #2196F3;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.15);
+        }
+
+        .call-option.selected {
+            border-color: #2196F3;
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+        }
+
+        .call-option-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .call-option-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+        }
+
+        .call-option-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .call-option-subtitle {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 5px 0 0 0;
+        }
+
+        .call-option-description {
+            color: #555;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .location-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .location-info h4 {
+            color: #333;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .location-item:last-child {
+            border-bottom: none;
+        }
+
+        .location-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .location-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .call-message {
+            background: #fff3e0;
+            border: 1px solid #ffcc02;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .call-message h4 {
+            color: #f57c00;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .call-message p {
+            color: #666;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            border-top: 1px solid #eee;
+        }
+
+        .call-btn {
+            width: 100%;
+            height: 55px;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .call-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+
+        .call-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 로딩 애니메이션 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 반응형 개선 */
+        @media (max-width: 480px) {
+            .app-container {
+                max-width: 100%;
+            }
+            
+            .content {
+                padding: 15px;
+                padding-bottom: 100px;
+            }
+            
+            .call-option {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="header-top">
+                <a href="/dashboard" class="back-btn">
+                    <i class="bi bi-arrow-left"></i>
+                    돌아가기
+                </a>
+                <div class="user-info">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <span id="user-name">사용자</span>님
+                </div>
+            </div>
+            <div class="header-main">
+                <h1><i class="bi bi-robot"></i> 로봇 호출</h1>
+                <p>로봇을 내 위치로 호출합니다</p>
+            </div>
+        </div>
+
+        <!-- 컨텐츠 -->
+        <div class="content">
+            <!-- 로봇 상태 -->
+            <div id="robot-status" class="robot-status">
+                <i class="bi bi-cpu"></i>
+                <span id="status-text">대기 중</span>
+            </div>
+
+            <!-- 호출 목적 선택 -->
+            <div class="call-options">
+                <div class="call-option" data-call-type="visit">
+                    <div class="call-option-header">
+                        <div class="call-option-icon">
+                            <i class="bi bi-house-door"></i>
+                        </div>
+                        <div>
+                            <h3 class="call-option-title">일반 방문</h3>
+                            <p class="call-option-subtitle">빈 손으로 방문</p>
+                        </div>
+                    </div>
+                    <p class="call-option-description">
+                        로봇이 빈 손으로 방문합니다. 간단한 안부 인사나 
+                        확인이 필요한 경우에 이용하세요.
+                    </p>
+                </div>
+
+                <div class="call-option" data-call-type="assistance">
+                    <div class="call-option-header">
+                        <div class="call-option-icon">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div>
+                            <h3 class="call-option-title">도움 요청</h3>
+                            <p class="call-option-subtitle">간단한 심부름</p>
+                        </div>
+                    </div>
+                    <p class="call-option-description">
+                        간단한 심부름이나 도움이 필요한 경우. 
+                        로봇이 가능한 범위 내에서 도와드립니다.
+                    </p>
+                </div>
+
+                <div class="call-option" data-call-type="emergency">
+                    <div class="call-option-header">
+                        <div class="call-option-icon">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <h3 class="call-option-title">긴급 호출</h3>
+                            <p class="call-option-subtitle">즉시 필요</p>
+                        </div>
+                    </div>
+                    <p class="call-option-description">
+                        긴급한 상황이거나 즉시 도움이 필요한 경우. 
+                        최우선으로 처리됩니다.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 위치 정보 -->
+            <div class="location-info">
+                <h4>
+                    <i class="bi bi-geo-alt-fill"></i>
+                    내 정보
+                </h4>
+                <div class="location-item">
+                    <span class="location-label">호실</span>
+                    <span class="location-value" id="room-number">-</span>
+                </div>
+                <div class="location-item">
+                    <span class="location-label">이름</span>
+                    <span class="location-value" id="resident-name">-</span>
+                </div>
+                <div class="location-item">
+                    <span class="location-label">연락처</span>
+                    <span class="location-value" id="phone-number">-</span>
+                </div>
+            </div>
+
+            <!-- 안내 메시지 -->
+            <div class="call-message">
+                <h4>🤖 로봇 호출 안내</h4>
+                <p>
+                    호출 목적을 선택하고 '로봇 호출하기' 버튼을 눌러주세요.<br>
+                    로봇이 즉시 출발하여 3-5분 내에 도착합니다.
+                </p>
+            </div>
+        </div>
+
+        <!-- 하단 호출 버튼 -->
+        <div class="bottom-bar">
+            <button id="call-button" class="call-btn" disabled>
+                <i class="bi bi-telephone-fill"></i>
+                <span id="call-btn-text">호출 목적을 선택해주세요</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 호출 완료 모달 -->
+    <div class="modal fade" id="callCompleteModal" tabindex="-1" aria-labelledby="callCompleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header text-center">
+                    <h5 class="modal-title w-100" id="callCompleteModalLabel">
+                        <i class="bi bi-check-circle-fill me-2"></i>호출 완료!
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="robot-icon" style="width: 80px; height: 80px; background: linear-gradient(135deg, #2196F3, #1976D2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 2.5rem; color: white; animation: bounce 2s infinite;">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <h4 class="mb-3">로봇이 출발했습니다!</h4>
+                    <p class="text-muted mb-0">잠시만 기다려주시면 로봇이<br>곧 도착할 예정입니다.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="bi bi-check-lg me-1"></i>확인
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedCallType = null;
+        let isCallInProgress = false;
+
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('user-name').textContent = data.user.name;
+                    document.getElementById('resident-name').textContent = data.user.name;
+                    document.getElementById('room-number').textContent = data.user.room || '101호';
+                    document.getElementById('phone-number').textContent = data.user.phone || '010-1234-5678';
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        }
+
+        // 로봇 상태 업데이트
+        async function updateRobotStatus() {
+            try {
+                const response = await fetch('/robot_status/robot_1?resident_id=' + localStorage.getItem('resident_id'));
+                const data = await response.json();
+                
+                if (data.success) {
+                    const statusElement = document.getElementById('robot-status');
+                    const statusTextElement = document.getElementById('status-text');
+                    
+                    if (data.status && data.status !== 'idle') {
+                        statusElement.style.display = 'block';
+                        
+                        const statusMap = {
+                            'moving_to_user': '🏃‍♂️ 호출에 응답하여 이동 중',
+                            'waiting_confirm': '📋 도착 완료 - 확인 대기',
+                            'returning_to_dock': '🔄 복귀 중',
+                            'busy': '🔄 다른 작업 수행 중'
+                        };
+                        
+                        statusTextElement.textContent = statusMap[data.status] || data.status;
+                        
+                        // 로봇이 바쁜 경우 호출 비활성화
+                        const callButton = document.getElementById('call-button');
+                        if (data.status === 'busy' || data.status === 'moving_to_user') {
+                            callButton.disabled = true;
+                            document.getElementById('call-btn-text').textContent = '로봇이 사용 중입니다';
+                            isCallInProgress = true;
+                        } else if (!isCallInProgress) {
+                            updateCallButtonState();
+                        }
+                    } else {
+                        statusElement.style.display = 'none';
+                        if (!isCallInProgress) {
+                            updateCallButtonState();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('로봇 상태 업데이트 실패:', error);
+            }
+        }
+
+        // 호출 옵션 선택 처리
+        document.querySelectorAll('.call-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // 기존 선택 해제
+                document.querySelectorAll('.call-option').forEach(opt => opt.classList.remove('selected'));
+                
+                // 새로운 선택
+                this.classList.add('selected');
+                selectedCallType = this.dataset.callType;
+                
+                updateCallButtonState();
+            });
+        });
+
+        // 호출 버튼 상태 업데이트
+        function updateCallButtonState() {
+            const callButton = document.getElementById('call-button');
+            const callBtnText = document.getElementById('call-btn-text');
+            
+            if (selectedCallType && !isCallInProgress) {
+                callButton.disabled = false;
+                callBtnText.textContent = '로봇 호출하기';
+            } else if (isCallInProgress) {
+                callButton.disabled = true;
+                callBtnText.textContent = '호출 진행 중...';
+            } else {
+                callButton.disabled = true;
+                callBtnText.textContent = '호출 목적을 선택해주세요';
+            }
+        }
+
+        // 로봇 호출 함수
+        async function callRobot() {
+            if (!selectedCallType || isCallInProgress) {
+                return;
+            }
+
+            isCallInProgress = true;
+            const callButton = document.getElementById('call-button');
+            const callBtnText = document.getElementById('call-btn-text');
+            
+            callButton.disabled = true;
+            callBtnText.innerHTML = '<div class="loading"></div> 로봇 호출 중...';
+
+            try {
+                const response = await fetch('/call_robot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        resident_id: localStorage.getItem('resident_id'),
+                        call_type: selectedCallType
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 호출 완료 모달 표시
+                    const modal = new bootstrap.Modal(document.getElementById('callCompleteModal'));
+                    modal.show();
+                    
+                    // 상태 업데이트
+                    updateRobotStatus();
+                } else {
+                    alert('로봇 호출에 실패했습니다: ' + data.message);
+                    isCallInProgress = false;
+                    updateCallButtonState();
+                }
+            } catch (error) {
+                console.error('로봇 호출 실패:', error);
+                alert('로봇 호출 중 오류가 발생했습니다.');
+                isCallInProgress = false;
+                updateCallButtonState();
+            }
+        }
+
+        // 호출 버튼 클릭 이벤트
+        document.getElementById('call-button').addEventListener('click', callRobot);
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 로그인 확인
+            if (!localStorage.getItem('resident_id')) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            loadUserInfo();
+            updateRobotStatus();
+            
+            // 정기적 업데이트
+            setInterval(updateRobotStatus, 3000);
+        });
+
+        // 모달 닫힌 후 상태 리셋
+        document.getElementById('callCompleteModal').addEventListener('hidden.bs.modal', function() {
+            // 선택 해제
+            document.querySelectorAll('.call-option').forEach(opt => opt.classList.remove('selected'));
+            selectedCallType = null;
+            
+            // 호출 상태는 계속 유지 (로봇이 이동 중이므로)
+            updateCallButtonState();
+        });
+    </script>
+</body>
+</html>

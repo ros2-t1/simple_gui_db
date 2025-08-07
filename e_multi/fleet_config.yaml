@@ -1,0 +1,36 @@
+# Fleet Management Configuration
+# Domain Bridge based multi-robot architecture
+
+central_domain: 129  # Central Fleet Manager domain (Server)
+
+robots:
+  robot_1:
+    domain_id: 18
+    hana_bot_id: 8  # Correct robot mapping
+    bridge_topics:
+      - /robot_1/user_cmd
+      - /robot_1/status
+      - /robot_1/confirm_request
+      - /robot_1/confirm_response
+    launch_script: "mobile_robot/start_robot.sh"
+    
+  robot_2:
+    domain_id: 19
+    hana_bot_id: 9  # Correct robot mapping
+    bridge_topics:
+      - /robot_2/user_cmd
+      - /robot_2/status
+      - /robot_2/confirm_request
+      - /robot_2/confirm_response
+    launch_script: "mobile_robot/start_robot.sh"
+
+# Domain Bridge configuration
+domain_bridge:
+  enable: true
+  bridge_config_path: "/tmp/domain_bridge_config.yaml"
+  
+# Network configuration
+network:
+  central_server_ip: "localhost"
+  fleet_manager_port: 8081
+  web_server_port: 8080
