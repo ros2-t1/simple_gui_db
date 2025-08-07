@@ -143,8 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 알림 아이콘 항상 표시
     notificationBtn.style.display = 'block';
-    // 기본 알림 내용 설정
-    updateNotificationContent('default');
+    // 개발 모드 알림 내용 설정
+    updateNotificationContent('dev_mode');
     notificationBadge.style.display = 'none';
 
     // 상품 목록 가져오기
@@ -261,7 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 알림 상태 관리
     let isNotificationShown = false;
-    let hasDeliveryNotification = false;
 
     // 로봇 상태 업데이트 함수
     function updateRobotStatus(status, isWaitingConfirm) {
@@ -319,13 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isWaitingConfirm) {
             // 배달 완료 알림 표시
             updateNotificationContent('delivery');
-            hasDeliveryNotification = true;
             // 배지 표시
             notificationBadge.style.display = 'flex';
         } else {
-            // 기본 알림으로 변경
-            updateNotificationContent('default');
-            hasDeliveryNotification = false;
+            // 기본 알림으로 변경 (개발 모드 버튼 포함)
+            updateNotificationContent('dev_mode');
             // 배지 숨김
             notificationBadge.style.display = 'none';
         }
@@ -348,6 +345,24 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             // 수령 완료 버튼 활성화
             notificationConfirmBtn.disabled = false;
+            notificationConfirmBtn.innerHTML = '<i class="bi bi-check-circle"></i> 수령 완료';
+            notificationLaterBtn.disabled = false;
+        } else if (type === 'dev_mode') {
+            // 개발 모드 - 항상 확인 버튼 사용 가능
+            notificationList.innerHTML = `
+                <div class="notification-item">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-tools" style="color: #ff6b6b; font-size: 1.2rem;"></i>
+                        <div>
+                            <strong>🛠️ 개발 모드</strong><br>
+                            <small>작업 완료를 수동으로 처리할 수 있습니다.</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            // 개발 모드에서는 항상 버튼 활성화
+            notificationConfirmBtn.disabled = false;
+            notificationConfirmBtn.innerHTML = '<i class="bi bi-check-circle"></i> 작업 완료 처리';
             notificationLaterBtn.disabled = false;
         } else {
             // 기본 상태 알림
@@ -374,13 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateNotificationContent('delivery');
     }
 
-    // 알림 숨김
-    function hideNotification() {
-        console.log('🔕 Hiding notification');
-        notificationBtn.style.display = 'none';
-        notificationDropdown.classList.remove('show');
-    }
-
     // 알림 버튼 클릭 이벤트
     notificationBtn.addEventListener('click', () => {
         console.log('🔔 Notification button clicked');
@@ -398,7 +406,8 @@ document.addEventListener('DOMContentLoaded', () => {
     notificationConfirmBtn.addEventListener('click', () => {
         // 기존 모달 수령 완료와 동일한 로직 실행
         modalConfirmButton.click();
-        hideNotification();
+        // 알림창만 닫기 (아이콘은 유지)
+        notificationDropdown.classList.remove('show');
     });
 
     // 알림창 나중에 버튼
