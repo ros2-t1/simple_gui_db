@@ -44,3 +44,34 @@ topics:
     type: std_msgs/msg/String
     from_domain: 19
     to_domain: 129
+
+  # Robot Arm communication (Robot Arm is on Domain 14)
+  # Robot 1 sends item_id to robot arm
+  robot_arm/user_cmd:
+    type: std_msgs/msg/Int32
+    from_domain: 18
+    to_domain: 14
+    
+  # Robot 2 sends item_id to robot arm
+  robot_arm/user_cmd:
+    type: std_msgs/msg/Int32
+    from_domain: 19
+    to_domain: 14
+    
+  # Robot arm sends status to Robot 1
+  robot_arm/status:
+    type: std_msgs/msg/String
+    from_domain: 14
+    to_domain: 18
+    
+  # Robot arm sends status to Robot 2
+  robot_arm/status:
+    type: std_msgs/msg/String
+    from_domain: 14
+    to_domain: 19
+    
+  # Robot arm sends status to Central (Fleet Manager monitoring)
+  robot_arm/status:
+    type: std_msgs/msg/String
+    from_domain: 14
+    to_domain: 129

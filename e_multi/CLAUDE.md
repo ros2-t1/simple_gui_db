@@ -21,8 +21,8 @@ python run_multirobot_fleet.py  # Domain Bridge 포함 멀티로봇 시스템
 # 1. Fleet Manager 시작
 python fleet_manager/fleet_manager.py
 
-# 2. Robot Node(s) 시작
-python robot_nodes/robot_node.py robot_1
+# 2. Robot Node(s) 시작  
+python mobile_robot/robot_nodes/robot_node.py robot_1
 
 # 3. Web Server 시작
 python -c "from web import create_app; create_app().run(host='0.0.0.0', port=8080)"
@@ -57,18 +57,28 @@ cd robot_package && ./start_robot.sh
 ### 데이터베이스 작업
 ```bash
 python check_db.py  # 데이터베이스 연결 및 상태 확인
+python test_db_sync.py  # DB 동기화 기능 테스트
 ```
 
 ## 아키텍처
 
 이것은 주거용 건물의 배송 로봇을 위한 ROS2 통합 다중 로봇 플릿 관리 시스템입니다.
 
+### 멀티도메인 아키텍처
+시스템은 ROS2 Domain Bridge를 사용하여 각 로봇을 독립적인 도메인에서 실행합니다:
+- **중앙 서버**: Domain 129 (Fleet Manager + Web Server)
+- **Robot 1**: Domain 18 (hana_bot_id: 8)
+- **Robot 2**: Domain 19 (hana_bot_id: 9)
+
+Domain Bridge가 도메인 간 통신을 중계하여 네트워크 격리와 확장성을 제공합니다.
+
 ### 핵심 구성 요소
 - **Web Server** (`web/`): Flask 기반 HTTP API 및 대시보드, 사용자 요청 및 웹 인터페이스 처리
-- **Fleet Manager** (`fleet_manager/`): ROS2를 사용한 로봇 할당 및 작업 분배를 위한 중앙 조정자
-- **Robot Nodes** (`robot_nodes/`): 다중 로봇 지원을 위한 ROS2 네임스페이싱이 있는 개별 로봇 컨트롤러
-- **Robot Control** (`robot/`): 팔 제어 및 내비게이션을 포함한 FSM 기반 로봇 동작
+- **Fleet Manager** (`fleet_manager/`): ROS2를 사용한 로봇 할당 및 작업 분배를 위한 중앙 조정자 (Domain Bridge 포함)
+- **Robot Nodes** (`mobile_robot/robot_nodes/`): 다중 로봇 지원을 위한 ROS2 네임스페이싱이 있는 개별 로봇 컨트롤러
+- **Robot Control** (`mobile_robot/robot/`): 팔 제어 및 내비게이션을 포함한 FSM 기반 로봇 동작
 - **Shared** (`shared/`): 공통 메시지 정의 및 데이터 구조
+- **Domain Bridge Config** (`config/domain.yaml`): 멀티도메인 통신 설정
 
 ### 통신 흐름
 ```
@@ -94,18 +104,23 @@ HTTP Request → Web Server → Fleet Manager (ROS2) → Robot Node → Robot FS
 - **분산 아키텍처 지원**: 로봇이 별도 머신에서 실행 가능하도록 DB 의존성 제거
 
 ### 새 기능 추가
-다양한 유형의 기능을 추가할 위치에 대한 자세한 지침은 README.md 59-140줄을 참조하세요:
+다양한 유형의 기능을 추가할 위치에 대한 지침:
 - Web API 기능 → `web/routes/`
-- 로봇 동작 → `robot/`
+- 로봇 동작 → `mobile_robot/robot/`
+- 로봇 노드 → `mobile_robot/robot_nodes/`
 - 플릿 관리 → `fleet_manager/`
 - 공통 데이터/메시지 → `shared/`
 - 데이터베이스 작업 → `web/`
+- 도메인 브리지 설정 → `config/domain.yaml`
 
 ### 구성
 - **중앙 서버**: `config.py`의 데이터베이스 연결 및 전역 설정
-- **로봇 개별 설정**: `robot_config.py`의 로봇별 독립 설정 (DB 접근 없음)
+- **Fleet 구성**: `fleet_config.yaml`의 로봇별 도메인 ID 및 브리지 설정
+  - robot_1: Domain 18, hana_bot_id 8
+  - robot_2: Domain 19, hana_bot_id 9
+- **Domain Bridge**: `config/domain.yaml`의 도메인 간 토픽 라우팅 설정
+- **로봇 개별 설정**: `mobile_robot/robot_config.py`의 로봇별 독립 설정 (DB 접근 없음)
 - **배포 도구**: `deploy_robot.py`로 로봇별 배포 패키지 생성
-- 단일 로봇 배포 (robot_1이 데이터베이스 ID 8에 매핑됨)
 
 ### 분산 배포 아키텍처
 ```

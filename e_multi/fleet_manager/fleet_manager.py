@@ -247,7 +247,7 @@ class FleetManager(Node):
             self.robots[robot_id].status = RobotStatus.BUSY
             self.robots[robot_id].current_task_id = str(next_task['task_id'])
             
-            # Send command to robot with resident_id, task_type, and coordinates
+            # Send command to robot with resident_id, task_type, item_id, and coordinates
             if next_task['task_type'] in ['배달', '호출']:
                 # Get target coordinates for the resident
                 target_coords = self._get_service_station_coords(next_task['requester_resident_id'])
@@ -256,6 +256,7 @@ class FleetManager(Node):
                     "command": "order",
                     "resident_id": next_task['requester_resident_id'],
                     "task_type": next_task['task_type'],
+                    "item_id": next_task.get('item_id'),  # Add item_id for robot arm
                     "target_coordinates": target_coords
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))
@@ -412,13 +413,14 @@ class FleetManager(Node):
                 robot_state.status = RobotStatus.BUSY
                 robot_state.current_task_id = str(next_task['task_id'])
                 
-                # Send order command with resident_id, task_type, and coordinates
+                # Send order command with resident_id, task_type, item_id, and coordinates
                 target_coords = self._get_service_station_coords(next_task['requester_resident_id'])
                 
                 cmd_data = {
                     "command": "order",
                     "resident_id": next_task['requester_resident_id'],
                     "task_type": next_task['task_type'],
+                    "item_id": next_task.get('item_id'),  # Add item_id for robot arm
                     "target_coordinates": target_coords
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))

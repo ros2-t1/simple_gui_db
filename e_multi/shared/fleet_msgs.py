@@ -23,7 +23,7 @@ class RobotStatus(Enum):
 class TaskRequest:
     task_id: str
     task_type: TaskType
-    resident_id: str
+    resident_id: str 
     items: List[Dict[str, Any]]
     priority: int = 1
 
