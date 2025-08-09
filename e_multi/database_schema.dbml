@@ -1,0 +1,164 @@
+// Multi-Robot Fleet Management System Database Schema
+// Generated from hana_db.sql
+
+Project MultiRobotFleet {
+  database_type: 'PostgreSQL'
+  Note: 'Residential delivery robot fleet management system'
+}
+
+// ========================================
+// CORE ENTITIES
+// ========================================
+
+Table hana_bots {
+  hana_bot_id integer [pk, increment, note: 'Unique robot identifier']
+  bot_name varchar(50) [not null, note: 'Human-readable robot name']
+  battery integer [note: 'Current battery percentage']
+  status varchar [note: 'Current robot status']
+  
+  Note: 'Physical delivery robots in the fleet'
+  
+  indexes {
+    bot_name [unique]
+  }
+}
+
+Table residents {
+  resident_id integer [pk, increment, note: 'Unique resident identifier']
+  name varchar(50) [not null, note: 'Resident full name']
+  gender char(1) [not null, note: 'M/F gender indicator']
+  birth_date date [not null, note: 'Date of birth']
+  assigned_room_id integer [note: 'Assigned room number']
+  service_station_id integer [ref: > locations.location_id, note: 'Delivery location']
+  login_id varchar(50) [unique, note: 'Username for authentication']
+  password varchar(255) [note: 'Hashed password (bcrypt)']
+  
+  Note: 'Residential facility residents who can request deliveries'
+}
+
+Table locations {
+  location_id integer [pk, increment, note: 'Unique location identifier']
+  location_type varchar [not null, note: 'Type of location']
+  location_name varchar(100) [not null, unique, note: 'Human-readable location name']
+  coordinates "double precision[]" [note: 'ROS navigation coordinates [x,y,z]']
+  
+  Note: 'Physical locations for robot navigation'
+}
+
+Table items {
+  item_id integer [pk, increment, note: 'Unique item identifier']
+  item_type varchar [not null, note: 'Category of item']
+  item_quantity integer [default: 100, not null, note: 'Current stock quantity']
+  
+  Note: 'Inventory items available for delivery'
+}
+
+// ========================================
+// TASK MANAGEMENT
+// ========================================
+
+Table tasks {
+  task_id integer [pk, increment, note: 'Unique task identifier']
+  task_type varchar [not null, note: 'Type of task (배달/호출)']
+  status varchar [not null, note: 'Current task status']
+  requester_resident_id integer [ref: > residents.resident_id, note: 'Who requested']
+  item_id integer [ref: > items.item_id, note: 'Item to deliver (optional)']
+  target_location_id integer [ref: > locations.location_id, note: 'Delivery destination']
+  source_reserved_task_id integer [ref: > reserved_tasks.reserved_task_id, note: 'Link to reservation']
+  assigned_bot_id integer [ref: > hana_bots.hana_bot_id, note: 'Assigned robot']
+  created_at timestamp [default: `CURRENT_TIMESTAMP`, not null, note: 'Task creation time']
+  completed_at timestamp [note: 'Task completion time']
+  
+  Note: 'Active delivery and call tasks'
+  
+  indexes {
+    created_at
+    status
+    assigned_bot_id
+  }
+}
+
+Table reserved_tasks {
+  reserved_task_id integer [pk, increment, note: 'Unique reservation identifier']
+  task_type varchar [not null, note: 'Type of scheduled task']
+  requester_resident_id integer [ref: > residents.resident_id, note: 'Who scheduled']
+  item_id integer [ref: > items.item_id, note: 'Item for scheduled delivery']
+  target_location integer [ref: > locations.location_id, note: 'Scheduled destination']
+  scheduled_time timestamp [not null, note: 'When to execute task']
+  
+  Note: 'Scheduled future tasks (reservations)'
+  
+  indexes {
+    scheduled_time [name: 'idx_rtasks_sched_time']
+  }
+}
+
+// ========================================
+// AUDIT & LOGGING
+// ========================================
+
+Table login_logs {
+  id integer [pk, increment, note: 'Log entry identifier']
+  resident_id integer [ref: > residents.resident_id, note: 'Who attempted login']
+  success boolean [note: 'Login success/failure']
+  client_ip varchar(50) [note: 'Source IP address']
+  login_time timestamp [default: `CURRENT_TIMESTAMP`, note: 'When login occurred']
+  
+  Note: 'Authentication audit trail'
+  
+  indexes {
+    resident_id
+    login_time
+  }
+}
+
+// ========================================
+// ENUMS (Check Constraints)
+// ========================================
+
+Enum robot_status {
+  충전중 [note: 'Charging']
+  작업중 [note: 'Working']
+  대기중 [note: 'Waiting/Idle']
+  복귀중 [note: 'Returning']
+  오프라인 [note: 'Offline']
+}
+
+Enum location_type {
+  "서비스 스테이션" [note: 'Service station (delivery point)']
+  "픽업 스테이션" [note: 'Pickup station (item collection)']
+  "충전 스테이션" [note: 'Charging station']
+  "선반" [note: 'Shelf/Storage']
+}
+
+Enum item_type {
+  물 [note: 'Water']
+  영양제 [note: 'Nutritional supplement']
+  생필품 [note: 'Daily necessities']
+  식판 [note: 'Meal tray']
+}
+
+Enum task_type {
+  배달 [note: 'Delivery']
+  호출 [note: 'Summon/Call']
+}
+
+Enum task_status {
+  대기 [note: 'Pending']
+  할당 [note: 'Assigned']
+  집기중 [note: 'Picking']
+  이동중 [note: 'Moving']
+  수령대기 [note: 'Waiting for confirmation']
+  완료 [note: 'Completed']
+  실패 [note: 'Failed']
+}
+
+// ========================================
+// RELATIONSHIPS VISUALIZATION
+// ========================================
+
+// Task relationships form the core workflow
+// Residents → Tasks → Robots
+// Tasks → Items (for deliveries)
+// Tasks → Locations (destinations)
+// Reserved Tasks → Tasks (scheduled execution)

@@ -163,7 +163,7 @@ class DeliveryFSM(Node):
         self.stat_pub.publish(String(data=text))
         self.get_logger().info(f"[STATUS] {text}")
 
-    # ---------- 상태 전이 ----------
+    # ---------- 상태 전이 ----------ff
     def set_step(self, nxt: int):
         self.step = nxt
         self.waypoint_nav.pinky_nav2_state = "None"
@@ -174,23 +174,33 @@ class DeliveryFSM(Node):
             case Step.GO_TO_ARM:
                 self.pub_status("moving_to_arm")
                 self.waypoint_nav.send_goal(cfg.PICKUP_ST1)
-            case Step.PICK:
-                self.pub_status("picking")
-                # Send item_id to robot arm if available
+                # Send item_id to robot arm immediately when starting to move
                 if self.current_item_id:
                     item_msg = Int32()
                     item_msg.data = int(self.current_item_id)
                     self.arm_cmd_pub.publish(item_msg)
-                    self.get_logger().info(f"Sent item_id {self.current_item_id} to robot arm")
-                    # Reset arm completion flag and start timeout
+                    self.get_logger().info(f"Sent item_id {self.current_item_id} to robot arm (early start)")
+                    # Reset arm completion flag for later checking
+                    self.arm_complete = False
+                    self.arm_timeout_start = time.time()
+            case Step.PICK:
+                self.pub_status("picking")
+                # Check if we already sent command in GO_TO_ARM
+                if self.current_item_id and self.arm_timeout_start:
+                    # Already sent command, just wait for completion
+                    self.set_step(Step.WAIT_ARM)
+                elif self.current_item_id:
+                    # Fallback: send command now if not sent earlier
+                    item_msg = Int32()
+                    item_msg.data = int(self.current_item_id)
+                    self.arm_cmd_pub.publish(item_msg)
+                    self.get_logger().info(f"Sent item_id {self.current_item_id} to robot arm (at pickup)")
                     self.arm_complete = False
                     self.arm_timeout_start = time.time()
                     self.set_step(Step.WAIT_ARM)
                 else:
                     # Fallback to old behavior if no item_id
                     self.get_logger().warn("No item_id available, using legacy arm control")
-                    arm_pick("vitamin")
-                    arm_place_on_robot()
                     self.set_step(Step.GO_TO_USER)
             case Step.WAIT_ARM:
                 self.pub_status("picking")  # Keep same status while waiting
@@ -213,8 +223,8 @@ class DeliveryFSM(Node):
                 self.arm_complete = False
                 self.arm_timeout_start = None
                 self.set_step(Step.GO_TO_USER)
-            elif self.arm_timeout_start and (time.time() - self.arm_timeout_start > 30):
-                # Timeout after 30 seconds
+            elif self.arm_timeout_start and (time.time() - self.arm_timeout_start > 100):
+                # Timeout after 100 seconds
                 self.get_logger().warn("Robot arm timeout, proceeding anyway")
                 self.arm_timeout_start = None
                 self.set_step(Step.GO_TO_USER)

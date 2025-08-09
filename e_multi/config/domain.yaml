@@ -28,21 +28,21 @@ topics:
   robot_2/user_cmd:
     type: std_msgs/msg/String
     from_domain: 129
-    to_domain: 19
+    to_domain: 21
     
   robot_2/status:
     type: std_msgs/msg/String
-    from_domain: 19
+    from_domain: 21
     to_domain: 129
     
   robot_2/confirm_request:
     type: std_msgs/msg/String
     from_domain: 129
-    to_domain: 19
+    to_domain: 21
     
   robot_2/confirm_response:
     type: std_msgs/msg/String
-    from_domain: 19
+    from_domain: 21
     to_domain: 129
 
   # Robot Arm communication (Robot Arm is on Domain 14)
@@ -55,7 +55,7 @@ topics:
   # Robot 2 sends item_id to robot arm
   robot_arm/user_cmd:
     type: std_msgs/msg/Int32
-    from_domain: 19
+    from_domain: 21
     to_domain: 14
     
   # Robot arm sends status to Robot 1
@@ -68,10 +68,17 @@ topics:
   robot_arm/status:
     type: std_msgs/msg/String
     from_domain: 14
-    to_domain: 19
+    to_domain: 21
     
   # Robot arm sends status to Central (Fleet Manager monitoring)
   robot_arm/status:
     type: std_msgs/msg/String
     from_domain: 14
     to_domain: 129
+
+ # 임시
+  cmd_vel:
+    type: geometry_msgs/msg/Twist
+    from_domain: 129
+    to_domain: 18
+    # remap: 
