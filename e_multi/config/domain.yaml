@@ -77,8 +77,8 @@ topics:
     to_domain: 129
 
  # 임시
-  cmd_vel:
-    type: geometry_msgs/msg/Twist
+  /DP_08/odom_aruco:
+    type: nav_msgs/msg/Odometry
     from_domain: 129
     to_domain: 18
     # remap: 
