@@ -55,37 +55,118 @@ def camera_stream_generator(camera_id):
 
 def udp_camera_worker(camera_id, camera_config):
     """Worker thread for UDP camera stream"""
+    import pickle
+    
     try:
-        # UDP socket setup
+        # UDP socket setup with enhanced debugging
+        print(f"[DEBUG] Starting camera {camera_id} worker...")
+        print(f"[DEBUG] Config: IP={camera_config['ip']}, Port={camera_config['port']}")
+        
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.settimeout(1.0)  # 1 second timeout
-        sock.bind(('', camera_config['port']))
-        mreq = struct.pack("4sl", socket.inet_aton(camera_config['ip']), socket.INADDR_ANY)
-        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         
-        print(f"Camera {camera_id} listening on {camera_config['ip']}:{camera_config['port']}")
+        # Bind to all interfaces with the specific port
+        sock.bind(('', camera_config['port']))
+        print(f"[DEBUG] Bound to port {camera_config['port']}")
+        
+        # Join multicast group (using same method as working code)
+        mreq = socket.inet_aton(camera_config['ip']) + socket.inet_aton('0.0.0.0')
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        print(f"[SUCCESS] Camera {camera_id} joined multicast group {camera_config['ip']}:{camera_config['port']}")
+        
+        # Determine stream format based on camera ID
+        # Global camera uses pickle format, robot cameras use raw JPEG with frame count
+        is_global_camera = (camera_id == 'global')
         
         # Initialize queue for this camera
         camera_streams[camera_id] = queue.Queue(maxsize=2)
         
+        frame_count = 0
+        last_log_time = time.time()
+        
         while active_cameras.get(camera_id, False):
             try:
-                data, _ = sock.recvfrom(65536)
-                np_arr = np.frombuffer(data, np.uint8)
-                frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                # Receive data from socket
+                packed_data, addr = sock.recvfrom(65536)
+                frame_count += 1
                 
+                # Log first frame and periodic updates
+                if frame_count == 1:
+                    print(f"[DEBUG] First frame received from {addr} for camera {camera_id}")
+                    print(f"[DEBUG] Data size: {len(packed_data)} bytes, First bytes: {packed_data[:10].hex()}")
+                
+                current_time = time.time()
+                if current_time - last_log_time > 5:  # Log every 5 seconds
+                    print(f"[DEBUG] Camera {camera_id}: {frame_count} frames received, last from {addr}")
+                    last_log_time = current_time
+                
+                frame = None
+                
+                # Handle different stream formats
+                if is_global_camera:
+                    # Global camera uses pickle format
+                    try:
+                        # Unpickle the received data
+                        data = pickle.loads(packed_data)
+                        
+                        # Extract and decode the JPEG frame
+                        # The 'frame' key contains numpy.ndarray of encoded JPEG
+                        encoded_frame = data['frame']
+                        frame = cv2.imdecode(encoded_frame, cv2.IMREAD_COLOR)
+                        
+                        if frame_count == 1 and frame is not None:
+                            print(f"[SUCCESS] Global camera pickle format detected. Frame shape: {frame.shape}")
+                            
+                    except pickle.UnpicklingError as e:
+                        if frame_count <= 5:
+                            print(f"[ERROR] Failed to unpickle data for {camera_id}: {e}")
+                    except KeyError as e:
+                        if frame_count <= 5:
+                            print(f"[ERROR] Missing key in pickled data for {camera_id}: {e}")
+                            
+                else:
+                    # Robot cameras use raw JPEG with frame count prefix
+                    try:
+                        # First 4 bytes are frame count (unsigned int)
+                        if len(packed_data) > 4:
+                            robot_frame_count = struct.unpack('I', packed_data[:4])[0]
+                            jpeg_data = packed_data[4:]
+                            
+                            # Decode JPEG directly
+                            np_arr = np.frombuffer(jpeg_data, np.uint8)
+                            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                            
+                            if frame_count == 1 and frame is not None:
+                                print(f"[SUCCESS] Robot camera format detected. Frame #{robot_frame_count}, Shape: {frame.shape}")
+                        else:
+                            if frame_count <= 5:
+                                print(f"[WARNING] Packet too small for robot camera format: {len(packed_data)} bytes")
+                                
+                    except struct.error as e:
+                        if frame_count <= 5:
+                            print(f"[ERROR] Failed to unpack frame count for {camera_id}: {e}")
+                    except Exception as e:
+                        if frame_count <= 5:
+                            print(f"[ERROR] Failed to decode robot camera frame: {e}")
+                
+                # Put frame in queue if successfully decoded
                 if frame is not None:
-                    # Put frame in queue (non-blocking)
                     camera_queue = camera_streams[camera_id]
                     if not camera_queue.full():
                         camera_queue.put(frame)
+                elif frame_count <= 5:
+                    print(f"[WARNING] Failed to decode frame {frame_count} for camera {camera_id}")
                     
             except socket.timeout:
+                # Log timeout every 5 seconds if no frames received
+                if frame_count == 0 and time.time() - last_log_time > 5:
+                    print(f"[DEBUG] Camera {camera_id}: No frames received (timeout)")
+                    last_log_time = time.time()
                 continue
             except Exception as e:
                 if active_cameras.get(camera_id, False):  # Only log if we're supposed to be active
-                    print(f"Camera {camera_id} UDP receive error: {e}")
+                    print(f"[ERROR] Camera {camera_id} UDP receive error: {e}")
                 break
                 
     except Exception as e:
