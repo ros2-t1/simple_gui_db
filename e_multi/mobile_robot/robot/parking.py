@@ -304,23 +304,25 @@ class AdvancedPositionController(Node):
         self.data_collector = DataCollector()
         
         # Target position and orientation
-        self.declare_parameter('target_x', 0.365)
-        self.declare_parameter('target_y', -0.32)
-        self.declare_parameter('target_yaw', 0.0)
+# PICKUP_ST1_NAV     = [0.241, -0.227, 0.707]  # Arm pickup station (Nav2 target)
+
+        self.declare_parameter('target_x', 0.24)
+        self.declare_parameter('target_y', -0.23)
+        self.declare_parameter('target_yaw', 1.57)
         self.target_x = self.get_parameter('target_x').value
         self.target_y = self.get_parameter('target_y').value
         self.target_yaw = self.get_parameter('target_yaw').value
         
         # Control thresholds
-        self.declare_parameter('position_tolerance', 0.03)
+        self.declare_parameter('position_tolerance', 0.01)
         self.declare_parameter('angle_tolerance', 0.05)
         self.position_tolerance = self.get_parameter('position_tolerance').value
         self.angle_tolerance = self.get_parameter('angle_tolerance').value
         
         # Pulse control parameters
         self.declare_parameter('pulse_activation_distance', 0.05)
-        self.declare_parameter('pulse_duration', 0.05)
-        self.declare_parameter('pulse_interval', 0.2) # 0.5
+        self.declare_parameter('pulse_duration', 0.2) # 0.05
+        self.declare_parameter('pulse_interval', 0.3) # 0.2
         self.declare_parameter('pulse_linear_speed', 0.02)
         self.declare_parameter('pulse_angular_speed', 0.2)
         
@@ -577,16 +579,16 @@ class AdvancedPositionController(Node):
                     # Progressive speed reduction
                     if error_deg > 45:
                         angular_speed = 0.20  # Fast for large errors
-                        pulse_duration_ratio = 0.7  # 70% on time
+                        pulse_duration_ratio = 1.0  # 70% on time
                     elif error_deg > 20:
                         angular_speed = 0.12  # Medium speed
-                        pulse_duration_ratio = 0.5  # 50% on time
+                        pulse_duration_ratio = 1.0  # 50% on time
                     elif error_deg > 10:
                         angular_speed = 0.08  # Slow
-                        pulse_duration_ratio = 0.3  # 30% on time
+                        pulse_duration_ratio = 1.0  # 30% on time
                     else:
                         angular_speed = 0.04  # Very slow for final approach
-                        pulse_duration_ratio = 0.2  # 20% on time
+                        pulse_duration_ratio = 0.7  # 20% on time
                     
                     # Apply pulse control for smooth convergence
                     pulse_active = self.update_pulse_state(current_time)

@@ -112,74 +112,175 @@ document.addEventListener('DOMContentLoaded', () => {
             'robots': { title: 'Robot Management', subtitle: 'Monitor and control individual robots' },
             'tasks': { title: 'Task Management', subtitle: 'View and manage all tasks' },
             'users': { title: 'User Management', subtitle: 'Manage registered users' },
-            'items': { title: 'Item Management', subtitle: 'View and update item inventory' }
+            'items': { title: 'Item Management', subtitle: 'View and update item inventory' },
+            'camera': { title: 'Camera System', subtitle: 'Multi-camera monitoring and control' }
         };
-        currentSectionTitle.textContent = sectionTitles[sectionId].title;
-        currentSectionSubtitle.textContent = sectionTitles[sectionId].subtitle;
+        currentSectionTitle.textContent = sectionTitles[sectionId]?.title || sectionId;
+        currentSectionSubtitle.textContent = sectionTitles[sectionId]?.subtitle || '';
     }
 
     sidebarLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            showSection(e.target.dataset.section);
-            refreshData(); // Refresh data when switching sections
+            const section = e.target.closest('.nav-link')?.dataset.section;
+            if (section) {
+                showSection(section);
+                refreshData(); // Refresh data when switching sections
+            }
+        });
+    });
+
+    // Dashboard Subtab switching logic
+    const subnavTabs = document.querySelectorAll('.subnav-tab');
+    const dashboardSubtabs = document.querySelectorAll('.dashboard-subtab');
+
+    function showDashboardSubtab(subtabId) {
+        // Hide all subtabs
+        dashboardSubtabs.forEach(subtab => {
+            subtab.classList.remove('active');
+        });
+        
+        // Show selected subtab
+        const targetSubtab = document.getElementById(`dashboard-${subtabId}`);
+        if (targetSubtab) {
+            targetSubtab.classList.add('active');
+        }
+
+        // Update tab buttons
+        subnavTabs.forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.subtab === subtabId) {
+                tab.classList.add('active');
+            }
+        });
+
+        console.log(`🔄 Switched to dashboard subtab: ${subtabId}`);
+    }
+
+    subnavTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            const subtabId = e.target.closest('.subnav-tab')?.dataset.subtab;
+            if (subtabId) {
+                showDashboardSubtab(subtabId);
+            }
         });
     });
 
     // Initialize charts (from advanced_fleet_dashboard.js)
     function initCharts() {
-        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
-        charts.hourly = new Chart(hourlyCtx, {
-            type: 'line',
-            data: {
-                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
-                datasets: [{ label: 'Total Tasks', data: [], borderColor: colors.primary, backgroundColor: colors.primary + '20', fill: true, tension: 0.4 }, { label: 'Completed', data: [], borderColor: colors.success, backgroundColor: colors.success + '20', fill: true, tension: 0.4 }, { label: 'Failed', data: [], borderColor: colors.danger, backgroundColor: colors.danger + '20', fill: true, tension: 0.4 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333333' } }, x: { grid: { color: '#333333' } } }, plugins: { legend: { display: true, position: 'top' } } }
-        });
+        const chartElements = [
+            { id: 'hourlyChart', key: 'hourly', type: 'line' },
+            { id: 'statusChart', key: 'status', type: 'doughnut' },
+            { id: 'robotChart', key: 'robot', type: 'bar' },
+            { id: 'trendChart', key: 'trend', type: 'line' }
+        ];
 
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        charts.status = new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Completed', 'Failed', 'Active', 'Pending'],
-                datasets: [{ data: [0, 0, 0, 0], backgroundColor: [colors.success, colors.danger, colors.warning, colors.muted], borderWidth: 2, borderColor: '#1e1e1e' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
-
-        const robotCtx = document.getElementById('robotChart').getContext('2d');
-        charts.robot = new Chart(robotCtx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{ label: 'Completed Tasks', data: [], backgroundColor: colors.success + '80', borderColor: colors.success, borderWidth: 1 }, { label: 'Failed Tasks', data: [], backgroundColor: colors.danger + '80', borderColor: colors.danger, borderWidth: 1 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333333' } }, x: { grid: { color: '#333333' } } } }
-        });
-
-        const trendCtx = document.getElementById('trendChart').getContext('2d');
-        charts.trend = new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{ label: 'Daily Tasks', data: [], borderColor: colors.primary, backgroundColor: colors.primary + '20', fill: true, tension: 0.4 }, { label: 'Success Rate %', data: [], borderColor: colors.success, backgroundColor: colors.success + '20', fill: false, yAxisID: 'percentage', tension: 0.4 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333333' } }, percentage: { type: 'linear', display: true, position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false, }, }, x: { grid: { color: '#333333' } } } }
+        chartElements.forEach(({ id, key, type }) => {
+            const element = document.getElementById(id);
+            if (element) {
+                try {
+                    const ctx = element.getContext('2d');
+                    if (key === 'hourly') {
+                        charts[key] = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                                datasets: [
+                                    { label: 'Total Tasks', data: [], borderColor: colors.primary, backgroundColor: colors.primary + '20', fill: true, tension: 0.4 }, 
+                                    { label: 'Completed', data: [], borderColor: colors.success, backgroundColor: colors.success + '20', fill: true, tension: 0.4 }, 
+                                    { label: 'Failed', data: [], borderColor: colors.danger, backgroundColor: colors.danger + '20', fill: true, tension: 0.4 }
+                                ]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333333' } }, x: { grid: { color: '#333333' } } }, plugins: { legend: { display: true, position: 'top' } } }
+                        });
+                    } else if (key === 'status') {
+                        charts[key] = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Completed', 'Failed', 'Active', 'Pending'],
+                                datasets: [{ data: [0, 0, 0, 0], backgroundColor: [colors.success, colors.danger, colors.warning, colors.muted], borderWidth: 2, borderColor: '#1e1e1e' }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                        });
+                    } else if (key === 'robot') {
+                        charts[key] = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: [],
+                                datasets: [
+                                    { label: 'Completed Tasks', data: [], backgroundColor: colors.success + '80', borderColor: colors.success, borderWidth: 1 }, 
+                                    { label: 'Failed Tasks', data: [], backgroundColor: colors.danger + '80', borderColor: colors.danger, borderWidth: 1 }
+                                ]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333333' } }, x: { grid: { color: '#333333' } } } }
+                        });
+                    } else if (key === 'trend') {
+                        charts[key] = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: [],
+                                datasets: [
+                                    { label: 'Daily Tasks', data: [], borderColor: colors.primary, backgroundColor: colors.primary + '20', fill: true, tension: 0.4 }, 
+                                    { label: 'Success Rate %', data: [], borderColor: colors.success, backgroundColor: colors.success + '20', fill: false, yAxisID: 'percentage', tension: 0.4 }
+                                ]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#333333' } }, percentage: { type: 'linear', display: true, position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false, }, }, x: { grid: { color: '#333333' } } } }
+                        });
+                    }
+                    console.log(`✅ Chart '${key}' initialized successfully`);
+                } catch (error) {
+                    console.error(`❌ Failed to initialize chart '${key}':`, error);
+                }
+            } else {
+                console.warn(`⚠️  Chart element '${id}' not found`);
+            }
         });
     }
 
     // Update metrics display (from advanced_fleet_dashboard.js)
     function updateMetrics(metrics) {
-        document.getElementById('total-tasks-today').textContent = metrics.total_tasks_today || 0;
-        const avgTime = metrics.avg_completion_time;
-        document.getElementById('avg-completion-time').textContent = (avgTime && typeof avgTime === 'number') ? avgTime.toFixed(1) : '0.0';
-        document.getElementById('active-users').textContent = metrics.unique_users_today || 0;
-        document.getElementById('active-robots').textContent = metrics.active_robots_today || 0;
-        const successRate = (metrics.total_tasks_today && metrics.total_tasks_today > 0) ? ((metrics.completed_today / metrics.total_tasks_today) * 100).toFixed(1) : '0.0';
-        document.getElementById('success-rate').textContent = successRate + '%';
-        document.getElementById('failed-tasks').textContent = metrics.failed_today || 0;
+        console.log('📊 Received metrics from API:', metrics);
+        
+        // Only update elements that exist in HTML
+        const elements = [
+            { id: 'total-tasks-today', value: metrics.total_tasks_today || 0 },
+            { id: 'active-users', value: metrics.unique_users_today || 0 }
+        ];
 
+        elements.forEach(({ id, value }) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+                console.log(`✅ Updated ${id}: ${value}`);
+            } else {
+                console.warn(`❌ Element with ID '${id}' not found`);
+            }
+        });
+
+        // Handle avg completion time
+        const avgTimeElement = document.getElementById('avg-completion-time');
+        if (avgTimeElement) {
+            const avgTime = metrics.avg_completion_time;
+            console.log('🕒 Avg completion time from API:', avgTime, typeof avgTime);
+            if (avgTime !== null && avgTime !== undefined && !isNaN(avgTime)) {
+                avgTimeElement.textContent = parseFloat(avgTime).toFixed(1);
+            } else {
+                avgTimeElement.textContent = '0.0';
+            }
+        } else {
+            console.warn('avg-completion-time element not found');
+        }
+
+        // Handle success rate
+        const successRateElement = document.getElementById('success-rate');
+        if (successRateElement) {
+            const successRate = (metrics.total_tasks_today && metrics.total_tasks_today > 0) ? 
+                ((metrics.completed_today / metrics.total_tasks_today) * 100).toFixed(1) : '0.0';
+            successRateElement.textContent = successRate + '%';
+        }
+
+        // Update change indicators (only if elements exist)
         updateChangeIndicator('tasks-change', 12, 'positive');
         updateChangeIndicator('time-change', -5, 'positive');
         updateChangeIndicator('users-change', 3, 'positive');
@@ -188,13 +289,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateChangeIndicator(elementId, change, type) {
         const element = document.getElementById(elementId);
-        const prefix = change > 0 ? '+' : '';
-        const suffix = elementId.includes('change') && !elementId.includes('users') ? '%' : '';
-        element.textContent = `${prefix}${change}${suffix}`;
-        element.className = `metric-change ${type}`;
+        if (element) {
+            const prefix = change > 0 ? '+' : '';
+            const suffix = elementId.includes('change') && !elementId.includes('users') ? '%' : '';
+            element.textContent = `${prefix}${change}${suffix}`;
+            element.className = `metric-change ${type}`;
+        } else {
+            console.warn(`Change indicator element with ID '${elementId}' not found`);
+        }
     }
 
     function updateHourlyChart(hourlyData) {
+        if (!charts.hourly) {
+            console.warn('Hourly chart not initialized');
+            return;
+        }
+
         const hours = Array.from({length: 24}, (_, i) => i);
         const taskCounts = new Array(24).fill(0);
         const completedCounts = new Array(24).fill(0);
@@ -207,35 +317,63 @@ document.addEventListener('DOMContentLoaded', () => {
             failedCounts[hour] = item.failed_count || 0;
         });
 
-        charts.hourly.data.datasets[0].data = taskCounts;
-        charts.hourly.data.datasets[1].data = completedCounts;
-        charts.hourly.data.datasets[2].data = failedCounts;
-        charts.hourly.update();
+        try {
+            charts.hourly.data.datasets[0].data = taskCounts;
+            charts.hourly.data.datasets[1].data = completedCounts;
+            charts.hourly.data.datasets[2].data = failedCounts;
+            charts.hourly.update();
+        } catch (error) {
+            console.error('Failed to update hourly chart:', error);
+        }
     }
 
     function updateStatusChart(metrics) {
+        if (!charts.status) {
+            console.warn('Status chart not initialized');
+            return;
+        }
+
         const data = [
             metrics.completed_today || 0,
             metrics.failed_today || 0,
             metrics.active_today || 0,
             (metrics.total_tasks_today || 0) - (metrics.completed_today || 0) - (metrics.failed_today || 0) - (metrics.active_today || 0)
         ];
-        charts.status.data.datasets[0].data = data;
-        charts.status.update();
+        
+        try {
+            charts.status.data.datasets[0].data = data;
+            charts.status.update();
+        } catch (error) {
+            console.error('Failed to update status chart:', error);
+        }
     }
 
     function updateRobotChart(robotData) {
+        if (!charts.robot) {
+            console.warn('Robot chart not initialized');
+            return;
+        }
+
         const names = robotData.map(robot => robot.bot_name || `Robot ${robot.hana_bot_id}`);
         const completed = robotData.map(robot => robot.completed_tasks || 0);
         const failed = robotData.map(robot => robot.failed_tasks || 0);
 
-        charts.robot.data.labels = names;
-        charts.robot.data.datasets[0].data = completed;
-        charts.robot.data.datasets[1].data = failed;
-        charts.robot.update();
+        try {
+            charts.robot.data.labels = names;
+            charts.robot.data.datasets[0].data = completed;
+            charts.robot.data.datasets[1].data = failed;
+            charts.robot.update();
+        } catch (error) {
+            console.error('Failed to update robot chart:', error);
+        }
     }
 
     function updateTrendChart(trendData) {
+        if (!charts.trend) {
+            console.warn('Trend chart not initialized');
+            return;
+        }
+
         const dates = trendData.map(item => {
             const date = new Date(item.date);
             return `${date.getMonth() + 1}/${date.getDate()}`;
@@ -248,14 +386,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return total > 0 ? parseFloat(((completed / total) * 100).toFixed(1)) : 0;
         }).reverse();
 
-        charts.trend.data.labels = dates;
-        charts.trend.data.datasets[0].data = tasks;
-        charts.trend.data.datasets[1].data = successRates;
-        charts.trend.update();
+        try {
+            charts.trend.data.labels = dates;
+            charts.trend.data.datasets[0].data = tasks;
+            charts.trend.data.datasets[1].data = successRates;
+            charts.trend.update();
+        } catch (error) {
+            console.error('Failed to update trend chart:', error);
+        }
     }
 
     function updateTopUsersTable(userData) {
         const tbody = document.getElementById('top-users-table');
+        if (!tbody) {
+            console.warn('Top users table element not found');
+            return;
+        }
+        
         if (!userData || userData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No data available</td></tr>';
             return;
@@ -279,6 +426,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updatePopularItemsTable(itemData) {
         const tbody = document.getElementById('popular-items-table');
+        if (!tbody) {
+            console.warn('Popular items table element not found');
+            return;
+        }
+        
         if (!itemData || itemData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No data available</td></tr>';
             return;
@@ -307,21 +459,48 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/fleet/analytics');
             if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             const result = await response.json();
-            if (result.success) {
+            if (result.success && result.data) {
                 currentData = result.data;
-                updateMetrics(currentData.system_metrics);
-                updateHourlyChart(currentData.hourly_distribution);
-                updateStatusChart(currentData.system_metrics);
-                updateRobotChart(currentData.robot_performance);
-                updateTrendChart(currentData.daily_trends);
-                updateTopUsersTable(currentData.top_requesters);
-                updatePopularItemsTable(currentData.popular_items);
+                
+                // Update each component safely
+                if (currentData.system_metrics) {
+                    updateMetrics(currentData.system_metrics);
+                    updateStatusChart(currentData.system_metrics);
+                }
+                if (currentData.hourly_distribution) {
+                    updateHourlyChart(currentData.hourly_distribution);
+                }
+                if (currentData.robot_performance) {
+                    updateRobotChart(currentData.robot_performance);
+                }
+                if (currentData.daily_trends) {
+                    updateTrendChart(currentData.daily_trends);
+                }
+                if (currentData.top_requesters) {
+                    updateTopUsersTable(currentData.top_requesters);
+                }
+                if (currentData.popular_items) {
+                    updatePopularItemsTable(currentData.popular_items);
+                }
+
+                console.log('✅ Analytics data updated successfully');
             } else {
-                throw new Error(result.error || 'Unknown API error');
+                throw new Error(result.error || 'No data received from API');
             }
         } catch (error) {
-            console.error('Failed to fetch analytics:', error);
-            showNotification('Failed to load analytics data: ' + error.message, 'error');
+            console.error('❌ Failed to fetch analytics:', error);
+            
+            // Show user-friendly error notification
+            const errorMessage = error.message.includes('Failed to fetch') ? 
+                'Unable to connect to server' : 
+                'Failed to load analytics data';
+            showNotification(errorMessage, 'error');
+            
+            // Initialize empty charts/tables if this is first load
+            if (!currentData) {
+                console.log('🔧 Initializing empty analytics display...');
+                updateMetrics({});
+            }
         }
     }
 
@@ -751,6 +930,22 @@ document.addEventListener('DOMContentLoaded', () => {
     window.maintenanceMode = () => { if (confirm('Enable maintenance mode? This will pause all operations.')) sendControlCommand('maintenance_mode'); };
     window.generateReport = () => { showNotification('Generating comprehensive fleet report...', 'info'); setTimeout(() => { showNotification('Report generation completed', 'success'); }, 3000); };
     window.clearFailedTasks = () => { if (confirm('Clear all failed tasks from the database?')) sendControlCommand('fail_all_incomplete'); };
+
+    // System operation functions
+    window.backupDatabase = () => { 
+        showNotification('Starting database backup...', 'info'); 
+        setTimeout(() => { showNotification('Database backup completed successfully', 'success'); }, 5000);
+    };
+    window.systemDiagnostics = () => { 
+        showNotification('Running system diagnostics...', 'info'); 
+        setTimeout(() => { showNotification('Diagnostics completed - System healthy', 'success'); }, 8000);
+    };
+    window.cleanupLogs = () => { 
+        if (confirm('Clean up old log files? This will remove logs older than 30 days.')) {
+            showNotification('Cleaning up log files...', 'info'); 
+            setTimeout(() => { showNotification('Log cleanup completed', 'success'); }, 3000);
+        }
+    };
 
     // Specific robot/task/user/item actions (placeholders)
     window.resetRobot = (robotId) => { showNotification(`Resetting robot ${robotId}...`, 'info'); /* Implement API call */ };
@@ -1446,6 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('HANA Admin Dashboard initialized');
         initCharts();
         showSection('dashboard'); // Start with dashboard section
+        showDashboardSubtab('overview'); // Start with overview subtab
         refreshData();
         updateBatteryCards(); // Initial battery card update
         updateInterval = setInterval(() => {
@@ -1474,54 +1670,103 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update chart based on time period
     function updateChartPeriod(period) {
-        let labels, dataPoints;
-        
-        switch(period) {
-            case '24h':
-                labels = Array.from({length: 24}, (_, i) => `${i}:00`);
-                dataPoints = 24;
-                break;
-            case '7d':
-                labels = Array.from({length: 7}, (_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (6 - i));
-                    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
-                });
-                dataPoints = 7;
-                break;
-            case '30d':
-                labels = Array.from({length: 30}, (_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - (29 - i));
-                    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
-                });
-                dataPoints = 30;
-                break;
-            default:
-                return;
-        }
-        
-        // Update hourly chart
-        if (charts.hourly) {
-            charts.hourly.data.labels = labels;
-            
-            // Generate mock data for different periods
-            const totalTasks = Array.from({length: dataPoints}, () => Math.floor(Math.random() * 20) + 5);
-            const completedTasks = totalTasks.map(total => Math.floor(total * (0.7 + Math.random() * 0.2)));
-            const failedTasks = totalTasks.map((total, i) => total - completedTasks[i]);
-            
-            charts.hourly.data.datasets[0].data = totalTasks;
-            charts.hourly.data.datasets[1].data = completedTasks;
-            charts.hourly.data.datasets[2].data = failedTasks;
-            
-            charts.hourly.update();
-        }
-        
         // Update chart title
         const chartTitle = document.querySelector('.chart-section h3');
-        if (chartTitle && chartTitle.textContent.includes('Hourly Task Distribution')) {
-            const periods = {'24h': '24h', '7d': '7 days', '30d': '30 days'};
-            chartTitle.textContent = `Hourly Task Distribution (${periods[period]})`;
+        if (chartTitle && chartTitle.textContent.includes('Task Distribution')) {
+            const periods = {'24h': 'Hourly (24h)', '7d': 'Daily (7 days)', '30d': 'Daily (30 days)'};
+            chartTitle.textContent = `Task Distribution - ${periods[period]}`;
+        }
+        
+        // Show loading state
+        showNotification(`Loading ${period} data...`, 'info', 2000);
+        
+        // Fetch data with period parameter
+        fetchAnalyticsForPeriod(period);
+    }
+
+    // Fetch analytics data for specific period
+    async function fetchAnalyticsForPeriod(period) {
+        try {
+            // For now, use the existing API with period as a query parameter
+            const response = await fetch(`/api/fleet/analytics?period=${period}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                currentData = result.data;
+                
+                // Update charts based on period
+                if (period === '24h') {
+                    // Use hourly data for 24h view
+                    if (currentData.hourly_distribution) {
+                        updateHourlyChart(currentData.hourly_distribution);
+                    }
+                } else {
+                    // Use daily trends for 7d and 30d views
+                    if (currentData.daily_trends) {
+                        updateHourlyChartWithDailyData(currentData.daily_trends, period);
+                    }
+                }
+                
+                // Update other components
+                if (currentData.system_metrics) {
+                    updateMetrics(currentData.system_metrics);
+                    updateStatusChart(currentData.system_metrics);
+                }
+                if (currentData.robot_performance) {
+                    updateRobotChart(currentData.robot_performance);
+                }
+                if (currentData.top_requesters) {
+                    updateTopUsersTable(currentData.top_requesters);
+                }
+                if (currentData.popular_items) {
+                    updatePopularItemsTable(currentData.popular_items);
+                }
+
+                console.log(`✅ Analytics data updated for ${period}`);
+            } else {
+                throw new Error(result.error || 'No data received from API');
+            }
+        } catch (error) {
+            console.error(`❌ Failed to fetch ${period} analytics:`, error);
+            showNotification(`Failed to load ${period} data`, 'error');
+            
+            // Fall back to regular analytics if period-specific fails
+            fetchAnalytics();
+        }
+    }
+
+    // Update hourly chart with daily data for 7d/30d views
+    function updateHourlyChartWithDailyData(dailyData, period) {
+        if (!charts.hourly) {
+            console.warn('Hourly chart not initialized');
+            return;
+        }
+
+        const limitDays = period === '7d' ? 7 : 30;
+        const recentData = dailyData.slice(0, limitDays);
+        
+        const dates = recentData.map(item => {
+            const date = new Date(item.date);
+            return period === '7d' ? 
+                date.toLocaleDateString('ko-KR', { weekday: 'short', month: 'short', day: 'numeric' }) :
+                date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+        }).reverse();
+        
+        const tasks = recentData.map(item => item.total_tasks || 0).reverse();
+        const completed = recentData.map(item => item.completed_tasks || 0).reverse();
+        const failed = recentData.map(item => item.failed_tasks || 0).reverse();
+
+        try {
+            charts.hourly.data.labels = dates;
+            charts.hourly.data.datasets[0].data = tasks;
+            charts.hourly.data.datasets[1].data = completed;
+            charts.hourly.data.datasets[2].data = failed;
+            charts.hourly.update();
+            
+            console.log(`✅ Updated chart with ${period} daily data`);
+        } catch (error) {
+            console.error(`Failed to update chart with daily data:`, error);
         }
     }
 

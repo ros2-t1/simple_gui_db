@@ -1062,6 +1062,113 @@
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0.3; }
         }
+
+        /* Dashboard Subtabs */
+        .dashboard-subnav {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .subnav-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+        }
+
+        .subnav-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 15px 25px;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .subnav-tab:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .subnav-tab.active {
+            color: var(--info-color);
+            border-bottom-color: var(--info-color);
+            background: rgba(0, 170, 255, 0.1);
+        }
+
+        .subnav-tab i {
+            font-size: 16px;
+        }
+
+        /* Dashboard Subtab Content */
+        .dashboard-subtab {
+            display: none;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .dashboard-subtab.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Featured Metric Cards */
+        .metric-card.featured {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            text-align: left;
+            padding: 25px;
+        }
+
+        .metric-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--info-color), var(--success-color));
+            color: white;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .metric-content {
+            flex: 1;
+        }
+
+        .metric-card.featured .metric-value {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .metric-card.featured .metric-label {
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        /* Control Panel Variants */
+        .control-panel[style*="border-color: var(--danger-color)"] {
+            border: 2px solid var(--danger-color);
+            background: rgba(255, 68, 68, 0.05);
+        }
+
+        .control-panel[style*="border-color: var(--danger-color)"] .control-panel-header {
+            border-bottom-color: var(--danger-color);
+        }
+
+        .control-panel[style*="border-color: var(--danger-color)"] .chart-title {
+            color: var(--danger-color);
+        }
     </style>
 </head>
 <body>
@@ -1158,7 +1265,27 @@
 
         <!-- Dashboard Section -->
         <div id="dashboard-section" class="section-content active">
-            <!-- Robot Battery Status -->
+            <!-- Dashboard Sub-Navigation -->
+            <div class="dashboard-subnav">
+                <div class="subnav-tabs">
+                    <button class="subnav-tab active" data-subtab="overview">
+                        <i class="bi bi-speedometer2"></i> Overview
+                    </button>
+                    <button class="subnav-tab" data-subtab="analytics">
+                        <i class="bi bi-graph-up"></i> Analytics  
+                    </button>
+                    <button class="subnav-tab" data-subtab="system">
+                        <i class="bi bi-gear"></i> System
+                    </button>
+                    <button class="subnav-tab" data-subtab="control">
+                        <i class="bi bi-sliders"></i> Control
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overview Subtab -->
+            <div id="dashboard-overview" class="dashboard-subtab active">
+                <!-- Robot Battery Status -->
             <div class="battery-status-container">
                 <div class="battery-card battery-offline" id="battery-dp09">
                     <div class="battery-header">
@@ -1186,86 +1313,55 @@
                     <div class="battery-timestamp" id="battery-time-dp03">No data</div>
                 </div>
             </div>
-
-            <!-- Key Metrics -->
-            <div class="row metrics-row">
-                <div class="col-md-2">
-                    <div class="metric-card">
-                        <div class="metric-value" id="total-tasks-today">0</div>
-                        <div class="metric-label">Total Tasks Today</div>
-                        <div class="metric-change positive" id="tasks-change">+0%</div>
+                
+                <!-- Key Metrics (핵심 운영 지표) -->
+                <div class="row metrics-row">
+                    <div class="col-md-3">
+                        <div class="metric-card featured">
+                            <div class="metric-icon"><i class="bi bi-clipboard-check"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="total-tasks-today">0</div>
+                                <div class="metric-label">Today's Tasks</div>
+                                <div class="metric-change positive" id="tasks-change">+0%</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card">
-                        <div class="metric-value" id="avg-completion-time">0.0</div>
-                        <div class="metric-label">Avg Completion (min)</div>
-                        <div class="metric-change" id="time-change">±0%</div>
+                    <div class="col-md-3">
+                        <div class="metric-card featured">
+                            <div class="metric-icon"><i class="bi bi-stopwatch"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="avg-completion-time">0.0</div>
+                                <div class="metric-label">Avg Time (min)</div>
+                                <div class="metric-change" id="time-change">±0%</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card">
-                        <div class="metric-value" id="active-users">0</div>
-                        <div class="metric-label">Active Users</div>
-                        <div class="metric-change positive" id="users-change">+0</div>
+                    <div class="col-md-3">
+                        <div class="metric-card featured">
+                            <div class="metric-icon"><i class="bi bi-check-circle"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="success-rate">0%</div>
+                                <div class="metric-label">Success Rate</div>
+                                <div class="metric-change positive" id="success-change">+0%</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card">
-                        <div class="metric-value" id="active-robots">0</div>
-                        <div class="metric-label">Active Robots</div>
-                        <div class="metric-change positive" id="robots-change">100%</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card">
-                        <div class="metric-value" id="success-rate">0%</div>
-                        <div class="metric-label">Success Rate</div>
-                        <div class="metric-change positive" id="success-change">+0%</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="metric-card">
-                        <div class="metric-value" id="failed-tasks">0</div>
-                        <div class="metric-label">Failed Tasks</div>
-                        <div class="metric-change negative" id="failed-change">0</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Camera System Metrics -->
-            <div class="row metrics-row">
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value" id="active-cameras">0</div>
-                        <div class="metric-label">Active Cameras</div>
-                        <div class="metric-change positive" id="cameras-change">+0%</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value" id="camera-bandwidth">0.0</div>
-                        <div class="metric-label">Bandwidth (Mbps)</div>
-                        <div class="metric-change" id="bandwidth-change">±0%</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value" id="system-uptime">0h</div>
-                        <div class="metric-label">System Uptime</div>
-                        <div class="metric-change positive" id="uptime-change">100%</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <div class="metric-value" id="camera-alerts">0</div>
-                        <div class="metric-label">Alerts Today</div>
-                        <div class="metric-change negative" id="alerts-change">0</div>
+                    <div class="col-md-3">
+                        <div class="metric-card featured">
+                            <div class="metric-icon"><i class="bi bi-people"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="active-users">0</div>
+                                <div class="metric-label">Active Users</div>
+                                <div class="metric-change positive" id="users-change">+0</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Charts Section -->
+            <!-- Analytics Subtab -->
+            <div id="dashboard-analytics" class="dashboard-subtab">
+                <!-- Charts Section -->
             <div class="row chart-section">
                 <div class="col-lg-6">
                     <div class="chart-container">
@@ -1381,43 +1477,243 @@
                 </div>
             </div>
 
-            <!-- Control Panel -->
-            <div class="control-panel">
-                <div class="control-panel-header">
-                    <div class="chart-title">
-                        <i class="bi bi-gear"></i>
-                        Fleet Control Center
+            </div>
+
+            <!-- System Subtab -->
+            <div id="dashboard-system" class="dashboard-subtab">
+                <!-- System Metrics -->
+                <div class="row metrics-row">
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-icon"><i class="bi bi-camera-video"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="active-cameras">0</div>
+                                <div class="metric-label">Active Cameras</div>
+                                <div class="metric-change positive" id="cameras-change">+0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-icon"><i class="bi bi-wifi"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="camera-bandwidth">0.0</div>
+                                <div class="metric-label">Bandwidth (Mbps)</div>
+                                <div class="metric-change" id="bandwidth-change">±0%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-icon"><i class="bi bi-clock"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="system-uptime">0h</div>
+                                <div class="metric-label">System Uptime</div>
+                                <div class="metric-change positive" id="uptime-change">100%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="camera-alerts">0</div>
+                                <div class="metric-label">Alerts Today</div>
+                                <div class="metric-change negative" id="alerts-change">0</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="control-actions">
-                    <button class="action-button" onclick="emergencyStop()">
-                        <i class="bi bi-stop-circle"></i>
-                        Emergency Stop All
-                    </button>
-                    <button class="action-button" onclick="resetSystem()">
-                        <i class="bi bi-arrow-clockwise"></i>
-                        Reset Fleet Status  
-                    </button>
-                    <button class="action-button success" onclick="optimizeRoutes()">
-                        <i class="bi bi-diagram-3"></i>
-                        Optimize Routes
-                    </button>
-                    <button class="action-button" onclick="maintenanceMode()">
-                        <i class="bi bi-tools"></i>
-                        Maintenance Mode
-                    </button>
-                    <button class="action-button" onclick="generateReport()">
-                        <i class="bi bi-file-text"></i>
-                        Generate Report
-                    </button>
-                    <button class="action-button danger" onclick="clearFailedTasks()">
-                        <i class="bi bi-trash"></i>
-                        Clear Failed Tasks
-                    </button>
-                    <button class="action-button" onclick="testFallAlert()" style="background: var(--warning-color); border-color: var(--warning-color);">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Test Fall Alert
-                    </button>
+
+                <!-- System Status Tables -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="data-table-container">
+                            <div class="table-header">
+                                <div class="table-title">
+                                    <i class="bi bi-hdd"></i>
+                                    System Resources
+                                </div>
+                            </div>
+                            <table class="advanced-table">
+                                <thead>
+                                    <tr>
+                                        <th>Component</th>
+                                        <th>Usage</th>
+                                        <th>Status</th>
+                                        <th>Performance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="system-resources-table">
+                                    <tr>
+                                        <td>CPU</td>
+                                        <td>45%</td>
+                                        <td><span class="status-badge idle">Normal</span></td>
+                                        <td>
+                                            <div class="performance-bar">
+                                                <div class="performance-fill good" style="width: 45%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Memory</td>
+                                        <td>62%</td>
+                                        <td><span class="status-badge busy">Active</span></td>
+                                        <td>
+                                            <div class="performance-bar">
+                                                <div class="performance-fill good" style="width: 62%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Disk</td>
+                                        <td>23%</td>
+                                        <td><span class="status-badge idle">Normal</span></td>
+                                        <td>
+                                            <div class="performance-bar">
+                                                <div class="performance-fill excellent" style="width: 23%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Network</td>
+                                        <td>78%</td>
+                                        <td><span class="status-badge busy">High Load</span></td>
+                                        <td>
+                                            <div class="performance-bar">
+                                                <div class="performance-fill poor" style="width: 78%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="data-table-container">
+                            <div class="table-header">
+                                <div class="table-title">
+                                    <i class="bi bi-shield-check"></i>
+                                    Security Status
+                                </div>
+                            </div>
+                            <table class="advanced-table">
+                                <thead>
+                                    <tr>
+                                        <th>Service</th>
+                                        <th>Status</th>
+                                        <th>Last Check</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="security-status-table">
+                                    <tr>
+                                        <td>Fall Detection</td>
+                                        <td><span class="status-badge idle">Active</span></td>
+                                        <td>2 min ago</td>
+                                        <td><button class="action-icon-btn"><i class="bi bi-gear"></i></button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Camera Monitoring</td>
+                                        <td><span class="status-badge idle">Active</span></td>
+                                        <td>1 min ago</td>
+                                        <td><button class="action-icon-btn"><i class="bi bi-gear"></i></button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Database Backup</td>
+                                        <td><span class="status-badge completed">Complete</span></td>
+                                        <td>30 min ago</td>
+                                        <td><button class="action-icon-btn"><i class="bi bi-download"></i></button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Fleet Manager</td>
+                                        <td><span class="status-badge idle">Running</span></td>
+                                        <td>Live</td>
+                                        <td><button class="action-icon-btn success"><i class="bi bi-check-circle"></i></button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Subtab -->
+            <div id="dashboard-control" class="dashboard-subtab">
+                <!-- Emergency Controls -->
+                <div class="control-panel" style="border-color: var(--danger-color);">
+                    <div class="control-panel-header">
+                        <div class="chart-title">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Emergency Controls
+                        </div>
+                    </div>
+                    <div class="control-actions">
+                        <button class="action-button danger" onclick="emergencyStop()">
+                            <i class="bi bi-stop-circle"></i>
+                            Emergency Stop All
+                        </button>
+                        <button class="action-button danger" onclick="clearFailedTasks()">
+                            <i class="bi bi-trash"></i>
+                            Clear Failed Tasks
+                        </button>
+                        <button class="action-button" onclick="testFallAlert()" style="background: var(--warning-color); border-color: var(--warning-color);">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Test Fall Alert
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Fleet Management Controls -->
+                <div class="control-panel">
+                    <div class="control-panel-header">
+                        <div class="chart-title">
+                            <i class="bi bi-gear"></i>
+                            Fleet Management
+                        </div>
+                    </div>
+                    <div class="control-actions">
+                        <button class="action-button" onclick="resetSystem()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Reset Fleet Status  
+                        </button>
+                        <button class="action-button success" onclick="optimizeRoutes()">
+                            <i class="bi bi-diagram-3"></i>
+                            Optimize Routes
+                        </button>
+                        <button class="action-button" onclick="maintenanceMode()">
+                            <i class="bi bi-tools"></i>
+                            Maintenance Mode
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Operations -->
+                <div class="control-panel">
+                    <div class="control-panel-header">
+                        <div class="chart-title">
+                            <i class="bi bi-server"></i>
+                            System Operations
+                        </div>
+                    </div>
+                    <div class="control-actions">
+                        <button class="action-button" onclick="generateReport()">
+                            <i class="bi bi-file-text"></i>
+                            Generate Report
+                        </button>
+                        <button class="action-button" onclick="backupDatabase()">
+                            <i class="bi bi-download"></i>
+                            Backup Database
+                        </button>
+                        <button class="action-button" onclick="systemDiagnostics()">
+                            <i class="bi bi-cpu"></i>
+                            Run Diagnostics
+                        </button>
+                        <button class="action-button" onclick="cleanupLogs()">
+                            <i class="bi bi-journal-x"></i>
+                            Cleanup Logs
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

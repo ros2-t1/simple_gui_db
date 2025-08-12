@@ -180,22 +180,61 @@ def fleet_status_api():
 def fleet_analytics_api():
     """API endpoint for advanced fleet analytics"""
     try:
-        # Time-based task statistics (last 24 hours)
+        # Get period parameter from query string
+        period = request.args.get('period', '24h')
+        
+        # Determine time interval and grouping based on period
+        if period == '24h':
+            time_interval = '24 hours'
+            group_by_clause = 'EXTRACT(HOUR FROM created_at)'
+            select_clause = 'EXTRACT(HOUR FROM created_at) as hour'
+            order_by_clause = 'hour'
+        elif period == '7d':
+            time_interval = '7 days'
+            group_by_clause = 'DATE(created_at)'
+            select_clause = 'DATE(created_at) as date'
+            order_by_clause = 'date'
+        elif period == '30d':
+            time_interval = '30 days'
+            group_by_clause = 'DATE(created_at)'
+            select_clause = 'DATE(created_at) as date'
+            order_by_clause = 'date'
+        else:
+            time_interval = '24 hours'
+            group_by_clause = 'EXTRACT(HOUR FROM created_at)'
+            select_clause = 'EXTRACT(HOUR FROM created_at) as hour'
+            order_by_clause = 'hour'
+        
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=DictCursor) as cur:
-                # Hourly task distribution
-                cur.execute("""
-                    SELECT 
-                        EXTRACT(HOUR FROM created_at) as hour,
-                        COUNT(*) as task_count,
-                        SUM(CASE WHEN status = '완료' THEN 1 ELSE 0 END) as completed_count,
-                        SUM(CASE WHEN status = '실패' THEN 1 ELSE 0 END) as failed_count
-                    FROM tasks 
-                    WHERE created_at >= NOW() - INTERVAL '24 hours'
-                    GROUP BY EXTRACT(HOUR FROM created_at)
-                    ORDER BY hour
-                """)
-                hourly_stats = [dict(row) for row in cur.fetchall()]
+                # Time-based task distribution
+                if period == '24h':
+                    cur.execute(f"""
+                        SELECT 
+                            {select_clause},
+                            COUNT(*) as task_count,
+                            SUM(CASE WHEN status = '완료' THEN 1 ELSE 0 END) as completed_count,
+                            SUM(CASE WHEN status = '실패' THEN 1 ELSE 0 END) as failed_count
+                        FROM tasks 
+                        WHERE created_at >= NOW() - INTERVAL '{time_interval}'
+                        GROUP BY {group_by_clause}
+                        ORDER BY {order_by_clause}
+                    """)
+                else:
+                    # For 7d and 30d, use field names that match daily_trends structure
+                    cur.execute(f"""
+                        SELECT 
+                            {select_clause},
+                            COUNT(*) as total_tasks,
+                            SUM(CASE WHEN status = '완료' THEN 1 ELSE 0 END) as completed_tasks,
+                            SUM(CASE WHEN status = '실패' THEN 1 ELSE 0 END) as failed_tasks
+                        FROM tasks 
+                        WHERE created_at >= NOW() - INTERVAL '{time_interval}'
+                        GROUP BY {group_by_clause}
+                        ORDER BY {order_by_clause} DESC
+                    """)
+                time_stats = [dict(row) for row in cur.fetchall()]
+                print(f"📊 Analytics API: period={period}, returned {len(time_stats)} records")
 
                 # Robot performance metrics
                 cur.execute("""
@@ -279,16 +318,25 @@ def fleet_analytics_api():
                 """)
                 system_metrics = dict(cur.fetchone())
 
+        # Structure response based on period
+        response_data = {
+            'robot_performance': robot_performance,
+            'top_requesters': top_requesters,
+            'popular_items': popular_items,
+            'daily_trends': daily_trends,
+            'system_metrics': system_metrics
+        }
+        
+        # Add time-based data with appropriate key
+        if period == '24h':
+            response_data['hourly_distribution'] = time_stats
+        else:
+            # For 7d and 30d, put the data in daily_trends for frontend processing
+            response_data['daily_trends'] = time_stats
+        
         return jsonify({
             'success': True,
-            'data': {
-                'hourly_distribution': hourly_stats,
-                'robot_performance': robot_performance,
-                'top_requesters': top_requesters,
-                'popular_items': popular_items,
-                'daily_trends': daily_trends,
-                'system_metrics': system_metrics
-            }
+            'data': response_data
         })
         
     except Exception as e:
