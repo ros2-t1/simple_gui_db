@@ -52,9 +52,9 @@ topics:
     from_domain: 18
     to_domain: 14
     
-  # Robot 2 sends item_id to robot arm
-  robot_arm/user_cmd:
-    type: std_msgs/msg/Int32
+  # Robot 2 sends item_id to robot arm (same topic, different source domain)
+  robot_arm/user_cmd_2:
+    type: std_msgs/msg/Int32  
     from_domain: 19
     to_domain: 14
     
@@ -82,21 +82,3 @@ topics:
     from_domain: 129
     to_domain: 18
     # remap: 
- # 임시
-  /DP_09/odom_aruco:
-    type: nav_msgs/msg/Odometry
-    from_domain: 129
-    to_domain: 19
-
- # 임시
-  /amcl_pose:
-    type: geometry_msgs/msg/PoseWithCovarianceStamped
-    from_domain: 19
-    to_domain: 18
-    remap: /DP_09/amcl_pose 
-
-  /amcl_pose:
-    type: geometry_msgs/msg/PoseWithCovarianceStamped
-    from_domain: 18
-    to_domain: 19
-    remap: /DP_08/amcl_pose 

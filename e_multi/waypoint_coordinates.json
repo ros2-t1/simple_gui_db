@@ -1,0 +1,69 @@
+{
+  "existing_locations": {
+    "arm": [
+      0.35,
+      -0.39
+    ],
+    "room1": [
+      0.05,
+      0.69
+    ],
+    "room2": [
+      0.34,
+      0.69
+    ],
+    "charging1": [
+      -0.2,
+      0.42
+    ],
+    "charging2": [
+      -0.2,
+      0.21
+    ]
+  },
+  "strategic_waypoints": {
+    "south_entry": [
+      0.1,
+      -0.1
+    ],
+    "intersection": [
+      0.1,
+      0.3
+    ],
+    "north_hub": [
+      0.1,
+      0.6
+    ],
+    "south_bypass": [
+      0.0,
+      0.0
+    ],
+    "charging_hub": [
+      -0.12,
+      0.315
+    ],
+    "west_safe": [
+      -0.05,
+      0.3
+    ],
+    "east_extension": [
+      0.25,
+      0.3
+    ],
+    "north_west": [
+      -0.02,
+      0.55
+    ]
+  },
+  "map_info": {
+    "resolution": 0.05,
+    "origin": [
+      -0.683,
+      -1.28
+    ],
+    "size": [
+      36,
+      54
+    ]
+  }
+}

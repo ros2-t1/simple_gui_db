@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2025-01-08T00:00:00.000Z" agent="5.0" etag="robot_fsm_v1" version="24.7.5" type="device">
+  <diagram name="Robot FSM State Diagram" id="robot-fsm-states">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="Robot FSM State Diagram" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="450" y="20" width="270" height="40" as="geometry" />
+        </mxCell>
+        
+        <!-- States -->
+        <!-- IDLE State -->
+        <mxCell id="state-idle" value="IDLE" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="520" y="100" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- GO_TO_ARM State -->
+        <mxCell id="state-go-to-arm" value="GO_TO_ARM&lt;br&gt;(Nav2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="320" y="230" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- PARKING State (at arm) -->
+        <mxCell id="state-parking-arm" value="PARKING&lt;br&gt;(Arm Station)&lt;br&gt;90°" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="320" y="340" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- PICK State -->
+        <mxCell id="state-pick" value="PICK&lt;br&gt;(Send item_id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="320" y="450" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- WAIT_ARM State -->
+        <mxCell id="state-wait-arm" value="WAIT_ARM&lt;br&gt;(Robot Arm)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="320" y="560" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- GO_TO_USER State -->
+        <mxCell id="state-go-to-user" value="GO_TO_USER&lt;br&gt;(Nav2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="520" y="560" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- USER_PARKING State -->
+        <mxCell id="state-user-parking" value="USER_PARKING&lt;br&gt;(Room Specific)&lt;br&gt;ROOM1: 0°&lt;br&gt;ROOM2: -90°" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="720" y="560" width="120" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- WAIT_CONFIRM State -->
+        <mxCell id="state-wait-confirm" value="WAIT_CONFIRM&lt;br&gt;(User Pickup)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="720" y="400" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- GO_DOCK State -->
+        <mxCell id="state-go-dock" value="GO_DOCK&lt;br&gt;(Nav2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="720" y="230" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- DOCK_PARKING State -->
+        <mxCell id="state-dock-parking" value="DOCK_PARKING&lt;br&gt;(Charging Station)&lt;br&gt;0°" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12" vertex="1" parent="1">
+          <mxGeometry x="720" y="100" width="120" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- Transitions -->
+        <!-- IDLE to GO_TO_ARM (배달) -->
+        <mxCell id="trans-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1" edge="1" parent="1" source="state-idle" target="state-go-to-arm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="140" />
+              <mxPoint x="480" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="trans-1-label" value="order (배달)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontColor=#0066CC" vertex="1" connectable="0" parent="trans-1">
+          <mxGeometry x="-0.3" y="-10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- IDLE to GO_TO_USER (호출) -->
+        <mxCell id="trans-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;dashed=1" edge="1" parent="1" source="state-idle" target="state-go-to-user">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="580" y="200" />
+              <mxPoint x="580" y="200" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="trans-2-label" value="order (호출)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontColor=#CC0066" vertex="1" connectable="0" parent="trans-2">
+          <mxGeometry x="0.2" y="-10" relative="1" as="geometry">
+            <mxPoint y="200" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- GO_TO_ARM to PARKING -->
+        <mxCell id="trans-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-go-to-arm" target="state-parking-arm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-3-label" value="Nav2 Done" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11" vertex="1" connectable="0" parent="trans-3">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- PARKING to PICK -->
+        <mxCell id="trans-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-parking-arm" target="state-pick">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-4-label" value="Parking Done" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11" vertex="1" connectable="0" parent="trans-4">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- PICK to WAIT_ARM -->
+        <mxCell id="trans-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-pick" target="state-wait-arm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-5-label" value="item_id sent" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11" vertex="1" connectable="0" parent="trans-5">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- WAIT_ARM to GO_TO_USER -->
+        <mxCell id="trans-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-wait-arm" target="state-go-to-user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-6-label" value="Arm Complete" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontColor=#009900" vertex="1" connectable="0" parent="trans-6">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- GO_TO_USER to USER_PARKING -->
+        <mxCell id="trans-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-go-to-user" target="state-user-parking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-7-label" value="Nav2 Done&lt;br&gt;(if enabled)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11" vertex="1" connectable="0" parent="trans-7">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- GO_TO_USER to WAIT_CONFIRM (if parking disabled) -->
+        <mxCell id="trans-7b" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1;dashed=1" edge="1" parent="1" source="state-go-to-user" target="state-wait-confirm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="580" y="480" />
+              <mxPoint x="780" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="trans-7b-label" value="Nav2 Done&lt;br&gt;(parking disabled)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontColor=#666666" vertex="1" connectable="0" parent="trans-7b">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- USER_PARKING to WAIT_CONFIRM -->
+        <mxCell id="trans-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-user-parking" target="state-wait-confirm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-8-label" value="Parking Done" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11" vertex="1" connectable="0" parent="trans-8">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- WAIT_CONFIRM to GO_DOCK -->
+        <mxCell id="trans-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-wait-confirm" target="state-go-dock">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-9-label" value="confirm" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontColor=#0066CC" vertex="1" connectable="0" parent="trans-9">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- WAIT_CONFIRM to GO_TO_ARM (연속 작업) -->
+        <mxCell id="trans-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#FF6600;dashed=1" edge="1" parent="1" source="state-wait-confirm" target="state-go-to-arm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="780" y="340" />
+              <mxPoint x="380" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="trans-10-label" value="order (next task)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontColor=#FF6600" vertex="1" connectable="0" parent="trans-10">
+          <mxGeometry x="0.2" y="-10" relative="1" as="geometry">
+            <mxPoint x="-100" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- GO_DOCK to DOCK_PARKING -->
+        <mxCell id="trans-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-go-dock" target="state-dock-parking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-11-label" value="Nav2 Done" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11" vertex="1" connectable="0" parent="trans-11">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- DOCK_PARKING to IDLE -->
+        <mxCell id="trans-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2" edge="1" parent="1" source="state-dock-parking" target="state-idle">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="trans-12-label" value="Parking Done" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11" vertex="1" connectable="0" parent="trans-12">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- GO_DOCK interrupted by new task -->
+        <mxCell id="trans-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#FF0000;dashed=1" edge="1" parent="1" source="state-go-dock" target="state-go-to-arm">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="260" />
+              <mxPoint x="900" y="80" />
+              <mxPoint x="260" y="80" />
+              <mxPoint x="260" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="trans-13-label" value="order (interrupt)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=11;fontColor=#FF0000" vertex="1" connectable="0" parent="trans-13">
+          <mxGeometry x="0.2" y="-10" relative="1" as="geometry">
+            <mxPoint x="-300" y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Legend -->
+        <mxCell id="legend-title" value="Legend" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="680" width="100" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="legend-normal" value="Normal Transition" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="90" y="710" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-normal-line" value="" style="endArrow=classic;html=1;strokeWidth=2" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="50" y="720" as="sourcePoint" />
+            <mxPoint x="80" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="legend-optional" value="Optional/Conditional" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="90" y="740" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-optional-line" value="" style="endArrow=classic;html=1;strokeWidth=1;dashed=1" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="50" y="750" as="sourcePoint" />
+            <mxPoint x="80" y="750" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="legend-interrupt" value="Interrupt/New Task" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontColor=#FF0000" vertex="1" parent="1">
+          <mxGeometry x="90" y="770" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-interrupt-line" value="" style="endArrow=classic;html=1;strokeWidth=2;dashed=1;strokeColor=#FF0000" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="50" y="780" as="sourcePoint" />
+            <mxPoint x="80" y="780" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Status Publishing Note -->
+        <mxCell id="status-note" value="Each state publishes status to /robot_1/status topic" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#ffffcc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="950" y="100" width="150" height="80" as="geometry" />
+        </mxCell>
+        
+        <!-- Parking Angles Note -->
+        <mxCell id="parking-note" value="Parking Angles:&lt;br&gt;• Arm: 90° (π/2)&lt;br&gt;• ROOM1: 0°&lt;br&gt;• ROOM2: -90° (-π/2)&lt;br&gt;• Dock: 0°" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left" vertex="1" parent="1">
+          <mxGeometry x="950" y="200" width="150" height="100" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

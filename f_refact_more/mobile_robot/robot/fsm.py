@@ -8,7 +8,6 @@ import sys
 import os
 import time
 import threading
-import math
 
 # Database access removed - coordinates now provided by Fleet Manager
 
@@ -30,7 +29,6 @@ class Step(IntEnum):
     PICK          = auto()  # Start picking process
     WAIT_ARM      = auto()  # Wait for robot arm to complete
     GO_TO_USER    = auto()
-    USER_PARKING  = auto()  # Precision parking at user location
     WAIT_CONFIRM  = auto()
     GO_DOCK       = auto()
     DOCK_PARKING  = auto()
@@ -60,7 +58,6 @@ class DeliveryFSM(Node):
 
         # Default service station coordinates (will be updated per delivery)
         self.service_station_coords = cfg.SERVICE_ST1
-        self.current_location_name = None  # Track location name for parking lookup
         self.get_logger().info(f"Initialized with default service station coordinates: {self.service_station_coords}")
         
         # Send initial status after a delay
@@ -88,7 +85,6 @@ class DeliveryFSM(Node):
             resident_id = cmd_data.get("resident_id")
             target_coordinates = cmd_data.get("target_coordinates")
             item_id = cmd_data.get("item_id")  # Get item_id for robot arm
-            self.current_location_name = cmd_data.get("location_name")  # Get location name for parking
             
             if command == "order":
                 if target_coordinates:
@@ -205,7 +201,7 @@ class DeliveryFSM(Node):
                 self.pub_status("idle")
             case Step.GO_TO_ARM:
                 self.pub_status("moving_to_arm")
-                self.waypoint_nav.send_goal(cfg.PICKUP_ST1_NAV)
+                self.waypoint_nav.send_goal(cfg.PICKUP_ST1)
                 # Send item_id to robot arm immediately when starting to move
                 if self.current_item_id:
                     item_msg = Int32()
@@ -242,20 +238,16 @@ class DeliveryFSM(Node):
             case Step.GO_TO_USER:
                 self.pub_status("moving_to_user")
                 self.waypoint_nav.send_goal(self.service_station_coords)
-            case Step.USER_PARKING:
-                self.pub_status("parking_at_user")
-                self.get_logger().info("State set to USER_PARKING. Controller will be created in the loop.")
             case Step.WAIT_CONFIRM:
                 self.pub_status("waiting_confirm")
             case Step.GO_DOCK:
                 self.pub_status("returning_to_dock")
-                self.waypoint_nav.send_goal(cfg.CHARGING_ST_NAV)
+                self.waypoint_nav.send_goal(cfg.CHARGING_ST)
             case Step.DOCK_PARKING:
                 self.pub_status("parking_at_dock")
 
     def loop(self):
         if self.step == Step.GO_TO_ARM  and self.waypoint_nav.pinky_nav2_state == "Done":
-            time.sleep(0.1)
             self.set_step(Step.PARKING)
 
         elif self.step == Step.PARKING:
@@ -263,12 +255,10 @@ class DeliveryFSM(Node):
                 self.get_logger().info("Creating and running parking controller.")
                 self.parking_controller = AdvancedPositionController()
                 
-                # Use precision parking coordinates (can be different from Nav2 target)
-                parking_coords = cfg.PICKUP_ST1_PARKING
-                target_x = parking_coords[0]
-                target_y = parking_coords[1]
-                # Set target with 90 degrees (π/2 radians) for robot arm parking
-                self.parking_controller.set_target(target_x, target_y, math.pi/2)
+                pickup_coords = cfg.PICKUP_ST1
+                target_x = pickup_coords[0]
+                target_y = pickup_coords[1]
+                self.parking_controller.set_target(target_x, target_y)
 
                 self.parking_executor = SingleThreadedExecutor()
                 self.parking_executor.add_node(self.parking_controller)
@@ -302,62 +292,7 @@ class DeliveryFSM(Node):
                 self.set_step(Step.GO_TO_USER)
         
         elif self.step == Step.GO_TO_USER and self.waypoint_nav.pinky_nav2_state == "Done":
-            # Check if precision parking is enabled for service stations
-            if cfg.SERVICE_PARKING_ENABLED:
-                self.set_step(Step.USER_PARKING)
-            else:
-                self.set_step(Step.WAIT_CONFIRM)
-        
-        elif self.step == Step.USER_PARKING:
-            if self.parking_controller is None:
-                self.get_logger().info(f"Creating parking controller for user location: {self.current_location_name}")
-                self.parking_controller = AdvancedPositionController()
-                
-                # Check if we have specific parking configuration for this location
-                if self.current_location_name and self.current_location_name in cfg.SERVICE_PARKING_COORDS:
-                    # Use room-specific parking coordinates AND angle
-                    parking_config = cfg.SERVICE_PARKING_COORDS[self.current_location_name]
-                    target_x = parking_config[0]
-                    target_y = parking_config[1]
-                    
-                    # Check if angle is specified (3rd element)
-                    if len(parking_config) > 2:
-                        target_yaw = parking_config[2]
-                    else:
-                        target_yaw = cfg.SERVICE_PARKING_DEFAULT_YAW
-                    
-                    self.get_logger().info(f"Using configured parking for {self.current_location_name}: "
-                                         f"pos=({target_x:.2f}, {target_y:.2f}), "
-                                         f"yaw={math.degrees(target_yaw):.1f}°")
-                else:
-                    # Fallback: Use Nav2 coordinates with default angle
-                    nav2_coords = self.service_station_coords
-                    target_x = nav2_coords[0]
-                    target_y = nav2_coords[1]
-                    target_yaw = cfg.SERVICE_PARKING_DEFAULT_YAW
-                    self.get_logger().info(f"No specific config for {self.current_location_name}, "
-                                         f"using Nav2 coords with default angle")
-                
-                # Set target with room-specific position and orientation
-                self.parking_controller.set_target(target_x, target_y, target_yaw)
-
-                self.parking_executor = SingleThreadedExecutor()
-                self.parking_executor.add_node(self.parking_controller)
-                
-                self.parking_thread = threading.Thread(target=self.parking_executor.spin)
-                self.parking_thread.daemon = True
-                self.parking_thread.start()
-                self.get_logger().info("User parking controller thread started.")
-            
-            else: # Monitor the running parking controller
-                if self.parking_controller.state == ControllerState.REACHED:
-                    self.get_logger().info("User precision parking successful.")
-                    self._cleanup_parking()
-                    self.set_step(Step.WAIT_CONFIRM)
-                elif self.parking_controller.state == ControllerState.ERROR:
-                    self.get_logger().error("User precision parking failed.")
-                    self._cleanup_parking()
-                    self.set_step(Step.WAIT_CONFIRM) # Proceed even if parking fails
+            self.set_step(Step.WAIT_CONFIRM)
         
         elif self.step == Step.GO_DOCK and self.waypoint_nav.pinky_nav2_state == "Done":
             self.set_step(Step.DOCK_PARKING)
@@ -367,12 +302,10 @@ class DeliveryFSM(Node):
                 self.get_logger().info("Creating and running parking controller for docking.")
                 self.parking_controller = AdvancedPositionController()
                 
-                # Use precision parking coordinates (can be different from Nav2 target)
-                parking_coords = cfg.CHARGING_ST_PARKING
-                target_x = parking_coords[0]
-                target_y = parking_coords[1]
-                # Dock parking maintains 0 degrees orientation
-                self.parking_controller.set_target(target_x, target_y, 0.0)
+                # User-specified coordinates
+                target_x = -0.3
+                target_y = 0.42
+                self.parking_controller.set_target(target_x, target_y)
 
                 self.parking_executor = SingleThreadedExecutor()
                 self.parking_executor.add_node(self.parking_controller)
@@ -412,7 +345,6 @@ class DeliveryFSM(Node):
             Step.PICK: "picking",
             Step.WAIT_ARM: "picking",  # Keep showing picking status while waiting for arm
             Step.GO_TO_USER: "moving_to_user",
-            Step.USER_PARKING: "parking_at_user",
             Step.WAIT_CONFIRM: "waiting_confirm",
             Step.GO_DOCK: "returning_to_dock",
             Step.DOCK_PARKING: "returning_to_dock"

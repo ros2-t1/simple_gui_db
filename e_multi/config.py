@@ -11,9 +11,18 @@ DB_DSN = {
 ROS_CMD_TOPIC   = "user_cmd"
 ROS_STAT_TOPIC  = "status"
 
-PICKUP_ST1      = [0.33, -0.33, 0.707]
-SERVICE_ST1   = [0.1, 0.78, -0.707]
-CHARGING_ST    = [0.0, 0.0, 1.0]
+# Nav2 waypoints (rough approach positions)
+PICKUP_ST1_NAV     = [0.33, -0.33, 0.707]
+SERVICE_ST1        = [0.1, 0.78, -0.707]
+CHARGING_ST_NAV    = [-0.3, 0.42, 1.0]
+
+# Precision parking positions (fine-tuned final positions)
+PICKUP_ST1_PARKING = [0.33, -0.33, 0.707]  # Can be adjusted separately
+CHARGING_ST_PARKING = [-0.3, 0.42, 1.0]    # Can be adjusted separately
+
+# Legacy names for backward compatibility
+PICKUP_ST1 = PICKUP_ST1_NAV
+CHARGING_ST = CHARGING_ST_NAV
 
 GLOBAL_CAMERA_IP= '224.1.1.1'
 GLOBAL_CAMERA_PORT = 5000

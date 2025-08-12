@@ -9,16 +9,13 @@ import threading
 import yaml
 import subprocess
 
-# Import shared message definitions
+# Import shared message definitions and database modules
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from shared.fleet_msgs import TaskRequest, TaskResponse, RobotState, TaskStatus, RobotStatus, TaskType
-
-# Add web directory to path for database access
-sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web'))
-from task_db import get_next_pending_task, update_task_status, complete_task, get_robot_current_task, get_timeout_tasks, fail_task
-from db import query_db, update_db
+from database.task_db import get_next_pending_task, update_task_status, complete_task, get_robot_current_task, get_timeout_tasks, fail_task
+from database.db import query_db, update_db
 
 class FleetManager(Node):
     def __init__(self):
@@ -249,16 +246,15 @@ class FleetManager(Node):
             
             # Send command to robot with resident_id, task_type, item_id, and coordinates
             if next_task['task_type'] in ['배달', '호출']:
-                # Get target coordinates and location name for the resident
-                target_coords, location_name = self._get_service_station_coords(next_task['requester_resident_id'])
+                # Get target coordinates for the resident
+                target_coords = self._get_service_station_coords(next_task['requester_resident_id'])
                 
                 cmd_data = {
                     "command": "order",
                     "resident_id": next_task['requester_resident_id'],
                     "task_type": next_task['task_type'],
                     "item_id": next_task.get('item_id'),  # Add item_id for robot arm
-                    "target_coordinates": target_coords,
-                    "location_name": location_name  # Add location name for parking lookup
+                    "target_coordinates": target_coords
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
@@ -414,16 +410,15 @@ class FleetManager(Node):
                 robot_state.status = RobotStatus.BUSY
                 robot_state.current_task_id = str(next_task['task_id'])
                 
-                # Send order command with resident_id, task_type, item_id, coordinates, and location name
-                target_coords, location_name = self._get_service_station_coords(next_task['requester_resident_id'])
+                # Send order command with resident_id, task_type, item_id, and coordinates
+                target_coords = self._get_service_station_coords(next_task['requester_resident_id'])
                 
                 cmd_data = {
                     "command": "order",
                     "resident_id": next_task['requester_resident_id'],
                     "task_type": next_task['task_type'],
                     "item_id": next_task.get('item_id'),  # Add item_id for robot arm
-                    "target_coordinates": target_coords,
-                    "location_name": location_name  # Add location name for parking lookup
+                    "target_coordinates": target_coords
                 }
                 cmd_msg = String(data=json.dumps(cmd_data))
                 self.robot_cmd_pubs[robot_id].publish(cmd_msg)
@@ -537,7 +532,7 @@ class FleetManager(Node):
         try:
             with query_db() as cur:
                 cur.execute("""
-                    SELECT l.coordinates, l.location_name 
+                    SELECT l.coordinates 
                     FROM residents r 
                     JOIN locations l ON r.service_station_id = l.location_id 
                     WHERE r.resident_id = %s
@@ -546,16 +541,15 @@ class FleetManager(Node):
                 
                 if result:
                     coordinates = result[0]  # PostgreSQL array format: {x,y,z}
-                    location_name = result[1]  # e.g., "방1", "방2"
-                    return self._parse_coordinates(coordinates), location_name
+                    return self._parse_coordinates(coordinates)
                 else:
                     self.get_logger().warn(f"No service station found for resident {resident_id}, using default coordinates")
                     # return [0.1, 0.78, -0.707]  # Default SERVICE_ST1 coordinates
-                    return None, None
+                    return None
         except Exception as e:
             self.get_logger().error(f"Error getting service station for resident {resident_id}: {e}, using default coordinates")
             # return [0.1, 0.78, -0.707]  # Fallback to default coordinates
-            return None, None
+            return None
     
     def _parse_coordinates(self, coords):
         """Parse PostgreSQL array format {x,y,z} to Python list [x,y,z]"""

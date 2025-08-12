@@ -303,24 +303,22 @@ class AdvancedPositionController(Node):
         # Initialize data collection system
         self.data_collector = DataCollector()
         
-        # Target position and orientation
+        # Target position
         self.declare_parameter('target_x', 0.365)
         self.declare_parameter('target_y', -0.32)
-        self.declare_parameter('target_yaw', 0.0)
         self.target_x = self.get_parameter('target_x').value
         self.target_y = self.get_parameter('target_y').value
-        self.target_yaw = self.get_parameter('target_yaw').value
         
         # Control thresholds
         self.declare_parameter('position_tolerance', 0.03)
-        self.declare_parameter('angle_tolerance', 0.05)
+        self.declare_parameter('angle_tolerance', 0.01)
         self.position_tolerance = self.get_parameter('position_tolerance').value
         self.angle_tolerance = self.get_parameter('angle_tolerance').value
         
         # Pulse control parameters
         self.declare_parameter('pulse_activation_distance', 0.05)
-        self.declare_parameter('pulse_duration', 0.05)
-        self.declare_parameter('pulse_interval', 0.2) # 0.5
+        self.declare_parameter('pulse_duration', 0.1)
+        self.declare_parameter('pulse_interval', 0.5) # 0.5
         self.declare_parameter('pulse_linear_speed', 0.02)
         self.declare_parameter('pulse_angular_speed', 0.2)
         
@@ -422,24 +420,6 @@ class AdvancedPositionController(Node):
         """Wrap angle to [-pi, pi]"""
         return (angle + math.pi) % (2 * math.pi) - math.pi
     
-    def get_shortest_angular_distance(self, from_angle: float, to_angle: float) -> float:
-        """Calculate shortest angular distance from current to target angle
-        Returns value in range [-pi, pi] where positive = CCW, negative = CW"""
-        # Normalize both angles to [-pi, pi]
-        from_norm = self.wrap_angle(from_angle)
-        to_norm = self.wrap_angle(to_angle)
-        
-        # Calculate raw difference
-        diff = to_norm - from_norm
-        
-        # Wrap to shortest path [-pi, pi]
-        if diff > math.pi:
-            diff -= 2 * math.pi
-        elif diff < -math.pi:
-            diff += 2 * math.pi
-            
-        return diff
-    
     def update_pulse_state(self, current_time: float) -> bool:
         """Update pulse control state"""
         if self.pulse_cycle_start_time is None:
@@ -487,7 +467,7 @@ class AdvancedPositionController(Node):
         
         # State machine logic (same as original, but with enhanced monitoring)
         if self.state == ControllerState.ROTATING_TO_TARGET:
-            if abs(angle_error) > self.angle_tolerance*2:
+            if abs(angle_error) > self.angle_tolerance:
                 cmd_vel.angular.z = self.angular_pid.compute(angle_error, current_time)
             else:
                 self.get_logger().info('✅ Rotation complete, moving to target')
@@ -546,94 +526,46 @@ class AdvancedPositionController(Node):
                 self.angular_pid.reset()
         
         elif self.state == ControllerState.FINAL_ADJUSTMENT:
-            # DECOUPLED CONTROL: Position first, then orientation
-            if distance > self.position_tolerance:
-                # POSITION ONLY - No rotation to prevent diagonal drift
-                dx = self.target_x - self.current_pose.x
-                dy = self.target_y - self.current_pose.y
-                
-                # Calculate forward/backward component in robot frame
-                forward_dist = dx * math.cos(self.current_pose.theta) + dy * math.sin(self.current_pose.theta)
-                
-                # Move straight forward/backward only
-                if abs(forward_dist) > 0.005:  # 5mm dead zone
-                    cmd_vel.linear.x = np.sign(forward_dist) * min(0.03, abs(forward_dist) * 2)
-                    cmd_vel.angular.z = 0.0  # ✅ NO rotation during position adjustment
-                else:
-                    cmd_vel = Twist()  # Stop completely
-                    
+            if distance > self.position_tolerance * 0.5:
+                # Fine position adjustment with slow movement
+                cmd_vel.linear.x = np.sign(math.cos(angle_error)) * min(0.05, distance * 2)
+                if abs(angle_error) > self.angle_tolerance:
+                    cmd_vel.angular.z = angle_error * 1.0
             else:
-                # ORIENTATION ONLY - Position reached, now rotate
-                # Use shortest path calculation to prevent 180° flips
-                final_yaw_error = self.get_shortest_angular_distance(
-                    self.current_pose.theta, self.target_yaw
-                )
-                
-                # Dead zone to prevent micro-oscillations
+                # Final orientation adjustment with pulse control for ultra-precision
+                final_yaw_error = self.wrap_angle(0.0 - self.current_pose.theta)
                 if abs(final_yaw_error) > self.angle_tolerance:
-                    # ADAPTIVE SPEED based on error magnitude
-                    error_deg = abs(math.degrees(final_yaw_error))
+                    # Apply pulse control for final rotation adjustment
+                    pulse_should_be_active = self.update_pulse_state(current_time)
                     
-                    # Progressive speed reduction
-                    if error_deg > 45:
-                        angular_speed = 0.20  # Fast for large errors
-                        pulse_duration_ratio = 0.7  # 70% on time
-                    elif error_deg > 20:
-                        angular_speed = 0.12  # Medium speed
-                        pulse_duration_ratio = 0.5  # 50% on time
-                    elif error_deg > 10:
-                        angular_speed = 0.08  # Slow
-                        pulse_duration_ratio = 0.3  # 30% on time
-                    else:
-                        angular_speed = 0.04  # Very slow for final approach
-                        pulse_duration_ratio = 0.2  # 20% on time
-                    
-                    # Apply pulse control for smooth convergence
-                    pulse_active = self.update_pulse_state(current_time)
-                    
-                    if pulse_active:
-                        # Check if we should pulse based on duration ratio
+                    if pulse_should_be_active:
+                        # During active pulse phase - apply very gentle rotation
+                        rotation_direction = np.sign(final_yaw_error)
+                        cmd_vel.angular.z = rotation_direction * min(self.pulse_angular_speed, abs(final_yaw_error))
+                        
+                        # Log pulse activity for final rotation
                         cycle_elapsed = current_time - self.pulse_cycle_start_time
-                        if (cycle_elapsed % self.pulse_interval) < (self.pulse_interval * pulse_duration_ratio):
-                            # Active phase - rotate
-                            rotation_direction = np.sign(final_yaw_error)
-                            
-                            # Velocity damping to prevent overshooting
-                            if abs(self.current_pose.omega) > 0.15:  # Already rotating fast
-                                damping = 0.5  # Reduce command by half
-                            else:
-                                damping = 1.0
-                            
-                            cmd_vel.angular.z = rotation_direction * angular_speed * damping
-                            cmd_vel.linear.x = 0.0  # ✅ NO linear motion during rotation
-                            
-                            # Log occasionally
-                            if cycle_elapsed < 0.02:
-                                self.get_logger().info(
-                                    f'🔄 Rotation: {math.degrees(final_yaw_error):.1f}° | '
-                                    f'Speed: {angular_speed:.2f} rad/s | '
-                                    f'Pulse: {int(pulse_duration_ratio*100)}%'
-                                )
-                        else:
-                            # Rest phase - complete stop
-                            cmd_vel = Twist()
+                        if cycle_elapsed < 0.02:  # Log only in first 20ms of each cycle
+                            self.get_logger().info(f'Final Rotation Pulse ON - Yaw error: {math.degrees(final_yaw_error):.1f}°, '
+                                                  f'Angular cmd: {cmd_vel.angular.z:.4f} rad/s')
                     else:
-                        cmd_vel = Twist()
+                        # During rest phase - robot stops rotating
+                        cmd_vel.angular.z = 0.0
                         
                 else:
-                    # Target reached!
+                    # Orientation target reached
                     self.get_logger().info('🎉 TARGET REACHED SUCCESSFULLY!')
                     self.get_logger().info(f'📍 Final position: ({self.current_pose.x:.4f}, {self.current_pose.y:.4f})')
                     self.get_logger().info(f'📐 Final orientation: {math.degrees(self.current_pose.theta):.1f}°')
                     self.get_logger().info(f'📏 Position error: {distance:.4f}m')
-                    self.get_logger().info(f'📐 Yaw error: {math.degrees(final_yaw_error):.2f}°')
                     
+                    # Calculate final performance metrics
                     total_time = current_time - self.performance_metrics.start_time
                     self.performance_metrics.total_time = total_time
-                    self.performance_metrics.settling_time = total_time
+                    self.performance_metrics.settling_time = total_time  # Simplified
                     
                     self.state = ControllerState.REACHED
-                    self.pulse_cycle_start_time = None
+                    self.pulse_cycle_start_time = None  # Reset pulse timing
                     self.stop_robot()
                     return
         
@@ -692,8 +624,8 @@ class AdvancedPositionController(Node):
         
         # Calculate angle error based on current control state (same as control loop logic)
         if self.state == ControllerState.FINAL_ADJUSTMENT and distance <= self.position_tolerance * 0.5:
-            # During final orientation adjustment, show error to final target orientation
-            angle_error = self.wrap_angle(self.target_yaw - self.current_pose.theta)
+            # During final orientation adjustment, show error to final target orientation (0 degrees)
+            angle_error = self.wrap_angle(0.0 - self.current_pose.theta)
         else:
             # During navigation, show error to target direction
             angle_error = self.wrap_angle(target_angle - self.current_pose.theta)
@@ -728,12 +660,11 @@ class AdvancedPositionController(Node):
         self.stop_robot()
         self.get_logger().error('🚨 EMERGENCY STOP ACTIVATED!')
     
-    def set_target(self, x: float, y: float, target_yaw: float = 0.0):
-        """Set new target position and orientation"""
+    def set_target(self, x: float, y: float):
+        """Set new target position"""
         self.target_x = x
         self.target_y = y
-        self.target_yaw = target_yaw
-        self.get_logger().info(f'🎯 New target set: ({x:.3f}, {y:.3f}), yaw: {math.degrees(target_yaw):.1f}°')
+        self.get_logger().info(f'🎯 New target set: ({x:.3f}, {y:.3f})')
 
 
 def main(args=None):
