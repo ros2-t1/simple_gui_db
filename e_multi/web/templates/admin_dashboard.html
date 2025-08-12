@@ -702,9 +702,237 @@
         .section-content.active {
             display: block; /* Shown when active */
         }
+
+        /* Fall Detection Alert Styles */
+        .fall-alert-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: white;
+            padding: 15px 25px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 20px rgba(255, 68, 68, 0.5);
+            animation: fallAlertPulse 2s infinite;
+            border-bottom: 3px solid #ffffff;
+        }
+
+        .fall-alert-banner.active {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .fall-alert-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-grow: 1;
+            justify-content: center;
+        }
+
+        .fall-alert-icon {
+            font-size: 24px;
+            animation: shake 0.5s infinite;
+        }
+
+        .fall-alert-message {
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .fall-alert-time {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .fall-alert-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .fall-alert-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .fall-alert-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+
+        .fall-alert-btn.acknowledge {
+            background: rgba(0, 255, 136, 0.3);
+            border-color: var(--success-color);
+        }
+
+        .fall-alert-btn.acknowledge:hover {
+            background: var(--success-color);
+            color: black;
+        }
+
+        @keyframes fallAlertPulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        /* Adjust main content margin when alert is active */
+        body.fall-alert-active .sidebar,
+        body.fall-alert-active .main-content {
+            margin-top: 70px;
+        }
+
+        /* Fall Alert Modal */
+        .fall-alert-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+        }
+
+        .fall-alert-modal.show {
+            display: flex;
+        }
+
+        .fall-alert-modal-content {
+            background: var(--card-bg);
+            border: 2px solid var(--danger-color);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            text-align: center;
+            animation: modalAppear 0.3s ease-out;
+        }
+
+        .fall-alert-modal-icon {
+            font-size: 64px;
+            color: var(--danger-color);
+            margin-bottom: 20px;
+            animation: shake 0.5s infinite;
+        }
+
+        .fall-alert-modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--danger-color);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .fall-alert-modal-message {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .fall-alert-modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .fall-alert-modal-btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .fall-alert-modal-btn.primary {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .fall-alert-modal-btn.primary:hover {
+            background: #cc0000;
+        }
+
+        .fall-alert-modal-btn.secondary {
+            background: var(--accent-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .fall-alert-modal-btn.secondary:hover {
+            background: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
+    <!-- Fall Detection Alert Banner -->
+    <div id="fall-alert-banner" class="fall-alert-banner">
+        <div class="fall-alert-content">
+            <i class="bi bi-exclamation-triangle-fill fall-alert-icon"></i>
+            <div>
+                <div class="fall-alert-message" id="fall-alert-message">Fall Detected!</div>
+                <div class="fall-alert-time" id="fall-alert-time">Time: --:--:--</div>
+            </div>
+        </div>
+        <div class="fall-alert-actions">
+            <button class="fall-alert-btn acknowledge" onclick="acknowledgeFallAlert()">
+                <i class="bi bi-check-circle"></i> Acknowledge
+            </button>
+            <button class="fall-alert-btn" onclick="clearFallAlert()">
+                <i class="bi bi-x-circle"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Fall Detection Alert Modal -->
+    <div id="fall-alert-modal" class="fall-alert-modal">
+        <div class="fall-alert-modal-content">
+            <i class="bi bi-exclamation-triangle-fill fall-alert-modal-icon"></i>
+            <h2 class="fall-alert-modal-title">Emergency Alert</h2>
+            <p class="fall-alert-modal-message" id="fall-alert-modal-message">
+                A fall has been detected! Please check the situation immediately and take appropriate action.
+            </p>
+            <div class="fall-alert-modal-actions">
+                <button class="fall-alert-modal-btn primary" onclick="acknowledgeAndCloseModal()">
+                    <i class="bi bi-check-circle"></i> Acknowledge & Close
+                </button>
+                <button class="fall-alert-modal-btn secondary" onclick="testFallAlert()">
+                    <i class="bi bi-gear"></i> Test Alert
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
@@ -986,6 +1214,10 @@
                     <button class="action-button danger" onclick="clearFailedTasks()">
                         <i class="bi bi-trash"></i>
                         Clear Failed Tasks
+                    </button>
+                    <button class="action-button" onclick="testFallAlert()" style="background: var(--warning-color); border-color: var(--warning-color);">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Test Fall Alert
                     </button>
                 </div>
             </div>

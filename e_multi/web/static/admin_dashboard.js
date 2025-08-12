@@ -1282,5 +1282,217 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Fall Detection System
+    let fallAlertState = {
+        active: false,
+        acknowledged: false,
+        checkInterval: null
+    };
+
+    function initFallDetection() {
+        // Check fall detection status every 2 seconds
+        fallAlertState.checkInterval = setInterval(checkFallDetectionStatus, 2000);
+        
+        // Initial check
+        checkFallDetectionStatus();
+        
+        console.log('🚨 Fall Detection System initialized');
+    }
+
+    function checkFallDetectionStatus() {
+        fetch('/api/fall_detection/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    updateFallAlertUI(data.data);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking fall detection status:', error);
+            });
+    }
+
+    function updateFallAlertUI(alertData) {
+        const banner = document.getElementById('fall-alert-banner');
+        const modal = document.getElementById('fall-alert-modal');
+        const alertMessage = document.getElementById('fall-alert-message');
+        const alertTime = document.getElementById('fall-alert-time');
+        const modalMessage = document.getElementById('fall-alert-modal-message');
+
+        if (alertData.active && !alertData.acknowledged) {
+            // Show alert banner
+            banner.classList.add('active');
+            document.body.classList.add('fall-alert-active');
+            
+            // Update message
+            if (alertData.message) {
+                alertMessage.textContent = alertData.message;
+                modalMessage.textContent = alertData.message;
+            }
+            
+            // Update time
+            if (alertData.timestamp) {
+                const alertDate = new Date(alertData.timestamp * 1000);
+                alertTime.textContent = `Time: ${alertDate.toLocaleTimeString()}`;
+            }
+            
+            // Show modal on first activation (not acknowledged)
+            if (!fallAlertState.active) {
+                modal.classList.add('show');
+                
+                // Play alert sound (optional)
+                playAlertSound();
+                
+                // Show browser notification if supported
+                showBrowserNotification('Fall Detected!', alertData.message || 'Emergency attention required');
+            }
+            
+            fallAlertState.active = true;
+            fallAlertState.acknowledged = alertData.acknowledged;
+            
+        } else {
+            // Hide alert
+            banner.classList.remove('active');
+            modal.classList.remove('show');
+            document.body.classList.remove('fall-alert-active');
+            
+            if (fallAlertState.active) {
+                showNotification('Fall alert cleared', 'success');
+            }
+            
+            fallAlertState.active = false;
+            fallAlertState.acknowledged = false;
+        }
+    }
+
+    function acknowledgeFallAlert() {
+        fetch('/api/fall_detection/acknowledge', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Fall alert acknowledged', 'success');
+                // Keep banner but mark as acknowledged
+                fallAlertState.acknowledged = true;
+            } else {
+                showNotification('Failed to acknowledge alert', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error acknowledging fall alert:', error);
+            showNotification('Error acknowledging alert', 'error');
+        });
+    }
+
+    function clearFallAlert() {
+        if (!confirm('Are you sure you want to clear the fall alert?')) {
+            return;
+        }
+        
+        fetch('/api/fall_detection/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Fall alert cleared', 'success');
+            } else {
+                showNotification('Failed to clear alert', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing fall alert:', error);
+            showNotification('Error clearing alert', 'error');
+        });
+    }
+
+    function acknowledgeAndCloseModal() {
+        acknowledgeFallAlert();
+        document.getElementById('fall-alert-modal').classList.remove('show');
+    }
+
+    function testFallAlert() {
+        fetch('/api/fall_detection/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Test fall alert activated', 'info');
+                document.getElementById('fall-alert-modal').classList.remove('show');
+            } else {
+                showNotification('Failed to activate test alert', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error testing fall alert:', error);
+            showNotification('Error testing alert', 'error');
+        });
+    }
+
+    function playAlertSound() {
+        try {
+            // Create audio context for alert sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.2);
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.4);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.6);
+            
+        } catch (error) {
+            console.log('Could not play alert sound:', error);
+        }
+    }
+
+    function showBrowserNotification(title, message) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, {
+                body: message,
+                icon: '/static/favicon.ico', // Optional: add favicon path
+                requireInteraction: true,
+                tag: 'fall-alert'
+            });
+        } else if ('Notification' in window && Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    new Notification(title, {
+                        body: message,
+                        requireInteraction: true,
+                        tag: 'fall-alert'
+                    });
+                }
+            });
+        }
+    }
+
+    // Make functions global for onclick handlers
+    window.acknowledgeFallAlert = acknowledgeFallAlert;
+    window.clearFallAlert = clearFallAlert;
+    window.acknowledgeAndCloseModal = acknowledgeAndCloseModal;
+    window.testFallAlert = testFallAlert;
+
+    // Initialize fall detection along with dashboard
     initDashboard();
+    initFallDetection();
 });

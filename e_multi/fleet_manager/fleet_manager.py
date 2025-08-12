@@ -20,6 +20,8 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'web'))
 from task_db import get_next_pending_task, update_task_status, complete_task, get_robot_current_task, get_timeout_tasks, fail_task
 from db import query_db, update_db
 
+# Note: Using file-based communication for fall detection alerts
+
 class FleetManager(Node):
     def __init__(self):
         super().__init__('fleet_manager')
@@ -81,6 +83,14 @@ class FleetManager(Node):
         
         # Recovery: Reset stuck 'assigned' tasks on startup (one-time)
         self.recovery_timer = self.create_timer(5.0, self.recover_stuck_assignments)
+        
+        # Fall detection subscription
+        self.fall_detection_sub = self.create_subscription(
+            String, '/fall_detection_topic', self.handle_fall_detection, 10)
+        
+        # Fall detection alert state
+        self.fall_alert_active = False
+        self.fall_alert_timestamp = None
         
         self.get_logger().info("Fleet Manager initialized")
     
@@ -681,6 +691,75 @@ class FleetManager(Node):
             
         except Exception as e:
             self.get_logger().error(f"Failed to start domain bridge: {e}")
+    
+    def handle_fall_detection(self, msg):
+        """Handle fall detection alerts from fall_detection_topic"""
+        try:
+            message_data = msg.data.strip()
+            self.get_logger().info(f"Received fall detection message: {message_data}")
+            
+            if message_data == "fall_detected":
+                self.fall_alert_active = True
+                self.fall_alert_timestamp = time.time()
+                
+                self.get_logger().warn("🚨 FALL DETECTED! Alert activated for admin dashboard")
+                
+                # Update web frontend fall alert state directly
+                self._update_web_fall_alert_state(True, self.fall_alert_timestamp, "Fall detected! Immediate attention required.")
+                
+                # Broadcast fall alert to web frontend
+                alert_msg = String()
+                alert_msg.data = json.dumps({
+                    "type": "fall_alert",
+                    "active": True,
+                    "timestamp": self.fall_alert_timestamp,
+                    "message": "Fall detected! Immediate attention required."
+                })
+                
+                # Use existing robot status publisher to broadcast alert
+                self.robot_status_pub.publish(alert_msg)
+                
+            elif message_data == "fall_cleared":
+                # Allow clearing the alert if needed
+                self.fall_alert_active = False
+                self.get_logger().info("Fall alert cleared")
+                
+                # Update web frontend fall alert state directly
+                self._update_web_fall_alert_state(False, time.time(), "Fall alert cleared.")
+                
+                # Broadcast cleared alert
+                alert_msg = String()
+                alert_msg.data = json.dumps({
+                    "type": "fall_alert",
+                    "active": False,
+                    "timestamp": time.time(),
+                    "message": "Fall alert cleared."
+                })
+                self.robot_status_pub.publish(alert_msg)
+                
+        except Exception as e:
+            self.get_logger().error(f"Error handling fall detection: {e}")
+    
+    def _update_web_fall_alert_state(self, active, timestamp, message):
+        """Update web fall alert state via file system"""
+        try:
+            # Create fall alert status file for web to read
+            fall_alert_data = {
+                "active": active,
+                "timestamp": timestamp,
+                "message": message,
+                "acknowledged": False
+            }
+            
+            # Write to temporary file that web can read
+            temp_file_path = "/tmp/fall_alert_status.json"
+            with open(temp_file_path, 'w') as f:
+                json.dump(fall_alert_data, f)
+            
+            self.get_logger().info(f"Updated fall alert status file: active={active}")
+            
+        except Exception as e:
+            self.get_logger().error(f"Error updating fall alert status file: {e}")
     
     def stop_domain_bridge(self):
         """Stop domain bridge process"""

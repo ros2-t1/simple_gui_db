@@ -9,6 +9,29 @@ import config as cfg
 
 bp = Blueprint('fleet_monitor', __name__)
 
+# Global fall detection alert state
+_fall_alert_state = {
+    "active": False,
+    "timestamp": None,
+    "message": "",
+    "acknowledged": False
+}
+
+def update_fall_alert_state(active, timestamp=None, message="", acknowledged=False):
+    """Update fall detection alert state"""
+    global _fall_alert_state
+    _fall_alert_state = {
+        "active": active,
+        "timestamp": timestamp,
+        "message": message,
+        "acknowledged": acknowledged
+    }
+
+def get_fall_alert_state():
+    """Get current fall detection alert state"""
+    global _fall_alert_state
+    return _fall_alert_state.copy()
+
 def get_db_connection():
     """Get database connection"""
     return psycopg2.connect(**cfg.DB_DSN)
@@ -433,6 +456,136 @@ def admin_items_api():
         return jsonify({
             'success': True,
             'data': items
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@bp.route('/api/fall_detection/status')
+def fall_detection_status():
+    """Get current fall detection alert status"""
+    try:
+        # First check file system for Fleet Manager updates
+        import os
+        import json
+        temp_file_path = "/tmp/fall_alert_status.json"
+        
+        if os.path.exists(temp_file_path):
+            try:
+                with open(temp_file_path, 'r') as f:
+                    file_data = json.load(f)
+                
+                # Update global state from file
+                update_fall_alert_state(
+                    file_data.get('active', False),
+                    file_data.get('timestamp'),
+                    file_data.get('message', ''),
+                    file_data.get('acknowledged', False)
+                )
+                
+                # Return file data
+                return jsonify({
+                    'success': True,
+                    'data': file_data
+                })
+            except Exception as file_error:
+                print(f"Error reading fall alert file: {file_error}")
+        
+        # Fallback to global state
+        return jsonify({
+            'success': True,
+            'data': get_fall_alert_state()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@bp.route('/api/fall_detection/acknowledge', methods=['POST'])
+def acknowledge_fall_alert():
+    """Acknowledge fall detection alert"""
+    try:
+        import os
+        import json
+        temp_file_path = "/tmp/fall_alert_status.json"
+        
+        # Update file if exists
+        if os.path.exists(temp_file_path):
+            try:
+                with open(temp_file_path, 'r') as f:
+                    file_data = json.load(f)
+                
+                file_data['acknowledged'] = True
+                
+                with open(temp_file_path, 'w') as f:
+                    json.dump(file_data, f)
+                
+            except Exception as file_error:
+                print(f"Error updating fall alert file: {file_error}")
+        
+        # Update global state
+        global _fall_alert_state
+        _fall_alert_state['acknowledged'] = True
+        
+        return jsonify({
+            'success': True,
+            'message': 'Fall alert acknowledged',
+            'data': get_fall_alert_state()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@bp.route('/api/fall_detection/clear', methods=['POST'])
+def clear_fall_alert():
+    """Clear fall detection alert"""
+    try:
+        import os
+        temp_file_path = "/tmp/fall_alert_status.json"
+        
+        # Remove file
+        if os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+                print(f"Removed fall alert status file")
+            except Exception as file_error:
+                print(f"Error removing fall alert file: {file_error}")
+        
+        # Update global state
+        update_fall_alert_state(False, None, "", False)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Fall alert cleared',
+            'data': get_fall_alert_state()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@bp.route('/api/fall_detection/test', methods=['POST'])
+def test_fall_alert():
+    """Test fall detection alert (for development/testing)"""
+    try:
+        import time
+        update_fall_alert_state(
+            active=True, 
+            timestamp=time.time(), 
+            message="Test fall detection alert - Please check immediately!", 
+            acknowledged=False
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Test fall alert activated',
+            'data': get_fall_alert_state()
         })
     except Exception as e:
         return jsonify({
