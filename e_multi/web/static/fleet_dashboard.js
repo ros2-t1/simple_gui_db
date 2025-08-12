@@ -167,6 +167,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const lastUpdate = robot.last_update ? new Date(robot.last_update * 1000).toLocaleTimeString('ko-KR', { hour12: false }) : 'N/A';
             const currentTask = robot.current_task ? `#${robot.current_task.task_id}` : 'None';
+            
+            // Battery information
+            const batteryLevel = robot.battery || 0;
+            const isRealTime = robot.battery_real_time || false;
+            console.log(`DEBUG: Robot ${robot.id} - battery: ${batteryLevel}, real_time: ${isRealTime}`);
+            let batteryIcon = '🟢';
+            let batteryClass = 'success';
+            
+            if (batteryLevel <= 20) {
+                batteryIcon = '🔴';
+                batteryClass = 'danger';
+            } else if (batteryLevel <= 40) {
+                batteryIcon = '🟡';
+                batteryClass = 'warning';
+            }
+            
+            const batteryStatus = `${batteryIcon} ${batteryLevel}%${isRealTime ? ' ⚡' : ' 📁'}`;
 
             html += `
                 <div class="robot-item">
@@ -174,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="robot-status-indicator ${statusClass}"></div>
                         <div>
                             <div class="robot-name">${robot.name}</div>
-                            <div class="robot-details">ID: ${robot.id} | Task: ${currentTask} | Updated: ${lastUpdate}</div>
+                            <div class="robot-details">ID: ${robot.id} | Task: ${currentTask} | Battery: ${batteryStatus} | Updated: ${lastUpdate}</div>
                         </div>
                     </div>
                     <div class="robot-status-text">${statusText}</div>

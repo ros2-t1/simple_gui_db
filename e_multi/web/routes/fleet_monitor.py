@@ -68,11 +68,30 @@ def fleet_status_api():
             current_task = None
             if robot_db_id:
                 current_task = get_robot_current_task(robot_db_id)
+
+            # Get real-time battery level
+            real_time_battery = get_battery_level_for_robot(robot_db_id) if robot_db_id else None
+            
+            # Get DB battery as fallback
+            db_battery = None
+            if robot_db_id:
+                try:
+                    with get_db_connection() as conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT battery FROM hana_bots WHERE hana_bot_id = %s", (robot_db_id,))
+                            result = cur.fetchone()
+                            db_battery = result[0] if result else None
+                except Exception as e:
+                    print(f"Error getting DB battery for robot {robot_db_id}: {e}")
+            
+            battery_level = real_time_battery if real_time_battery is not None else db_battery
             
             robots.append({
                 'id': robot_id,
                 'name': 'HANA PINKY' if robot_id == 'robot_1' else ('HANA ROBOT 2' if robot_id == 'robot_2' else robot_id),
                 'status': status_data.get('status', 'idle') if status_data else 'offline',
+                'battery': battery_level,
+                'battery_real_time': real_time_battery is not None,
                 'current_task': current_task,
                 'last_update': status_data.get('last_update') if status_data else None,
                 'is_waiting_confirm': status_data.get('is_waiting_confirm', False) if status_data else False
@@ -340,6 +359,47 @@ def fleet_control_api():
 
 # GPT가 수정함 0730
 
+def get_real_time_battery_data():
+    """Get real-time battery data from Fleet Manager"""
+    import os
+    import json
+    
+    battery_file_path = "/tmp/battery_status.json"
+    battery_data = {}
+    
+    if os.path.exists(battery_file_path):
+        try:
+            with open(battery_file_path, 'r') as f:
+                battery_data = json.load(f)
+        except Exception as e:
+            print(f"Error reading battery status file: {e}")
+    
+    return battery_data
+
+def get_battery_level_for_robot(robot_id):
+    """Get real-time battery level for specific robot"""
+    battery_data = get_real_time_battery_data()
+    
+    # Map robot database ID to battery topic ID
+    battery_id_map = {
+        8: 'DP_09',  # robot_1 (HANA PINKY)
+        9: 'DP_03'   # robot_2 (HANA ROBOT 9)
+    }
+    
+    battery_id = battery_id_map.get(robot_id)
+    if battery_id and battery_id in battery_data:
+        battery_info = battery_data[battery_id]
+        level = battery_info.get('level', 0)
+        timestamp = battery_info.get('timestamp', 0)
+        
+        # Check if data is recent (within last 30 seconds)
+        import time
+        data_age = time.time() - timestamp
+        
+        return level if data_age < 30 else None
+    
+    return None
+
 @bp.route('/api/admin/robots')
 def admin_robots_api():
     """API endpoint for all robot data"""
@@ -371,10 +431,15 @@ def admin_robots_api():
             if bot_id:
                 current_task = get_robot_current_task(bot_id)
 
+            # Get real-time battery level
+            real_time_battery = get_battery_level_for_robot(bot_id)
+            battery_level = real_time_battery if real_time_battery is not None else db_robot['battery']
+
             robots.append({
                 'id': bot_id,
                 'name': db_robot['bot_name'],
-                'battery': db_robot['battery'],
+                'battery': battery_level,
+                'battery_real_time': real_time_battery is not None,
                 'status': ros_status.get('status', db_robot['status'] or 'offline'), # Prefer ROS status
                 'current_task': current_task,
                 'last_update': ros_status.get('last_update')
@@ -587,6 +652,86 @@ def test_fall_alert():
             'message': 'Test fall alert activated',
             'data': get_fall_alert_state()
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@bp.route('/api/battery/status')
+def battery_status():
+    """Get current robot battery status"""
+    try:
+        import os
+        import json
+        battery_file_path = "/tmp/battery_status.json"
+        
+        if os.path.exists(battery_file_path):
+            try:
+                with open(battery_file_path, 'r') as f:
+                    battery_data = json.load(f)
+                    
+                return jsonify({
+                    'success': True,
+                    'data': battery_data
+                })
+            except Exception as file_error:
+                print(f"Error reading battery status file: {file_error}")
+        
+        # Fallback: no data available
+        return jsonify({
+            'success': True,
+            'data': {
+                "DP_09": {"level": 0, "timestamp": 0},
+                "DP_03": {"level": 0, "timestamp": 0}
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@bp.route('/api/battery/test/<robot_id>/<int:level>', methods=['POST'])
+def test_battery_level(robot_id, level):
+    """Test battery level (for development/testing)"""
+    try:
+        import os
+        import json
+        import time
+        
+        battery_file_path = "/tmp/battery_status.json"
+        
+        # Load existing data or create new
+        battery_data = {}
+        if os.path.exists(battery_file_path):
+            try:
+                with open(battery_file_path, 'r') as f:
+                    battery_data = json.load(f)
+            except:
+                pass
+        
+        # Update specific robot
+        if robot_id in ["DP_09", "DP_03"]:
+            battery_data[robot_id] = {
+                "level": max(0, min(100, level)),
+                "timestamp": time.time()
+            }
+            
+            with open(battery_file_path, 'w') as f:
+                json.dump(battery_data, f)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Test battery level set: {robot_id} = {level}%',
+                'data': battery_data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid robot_id: {robot_id}. Use DP_09 or DP_03'
+            })
+            
     except Exception as e:
         return jsonify({
             'success': False,

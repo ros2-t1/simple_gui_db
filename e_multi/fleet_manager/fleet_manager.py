@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32
 import json
 import time
 from typing import Dict, List
@@ -91,6 +91,20 @@ class FleetManager(Node):
         # Fall detection alert state
         self.fall_alert_active = False
         self.fall_alert_timestamp = None
+        
+        # Battery status subscriptions
+        self.battery_status = {
+            "DP_09": {"level": 0, "timestamp": time.time()},  # Robot 1
+            "DP_03": {"level": 0, "timestamp": time.time()}   # Robot 2
+        }
+        
+        # Subscribe to battery topics
+        self.battery_dp09_sub = self.create_subscription(
+            Float32, '/DP_09/battery_present', 
+            lambda msg: self.handle_battery_status(msg, "DP_09"), 10)
+        self.battery_dp03_sub = self.create_subscription(
+            Float32, '/DP_03/battery_present', 
+            lambda msg: self.handle_battery_status(msg, "DP_03"), 10)
         
         self.get_logger().info("Fleet Manager initialized")
     
@@ -760,6 +774,55 @@ class FleetManager(Node):
             
         except Exception as e:
             self.get_logger().error(f"Error updating fall alert status file: {e}")
+    
+    def handle_battery_status(self, msg, robot_id):
+        """Handle battery status messages from /DP_09/battery_present and /DP_03/battery_present"""
+        try:
+            # Parse battery level from Float32 message
+            battery_data = msg.data
+            
+            # Convert float to integer percentage (assume 0.0-1.0 range or 0-100 range)
+            try:
+                # If the value is between 0-1, assume it's a percentage ratio
+                if 0.0 <= battery_data <= 1.0:
+                    battery_level = int(battery_data * 100)
+                # If the value is between 1-100, assume it's already a percentage
+                elif 1.0 < battery_data <= 100.0:
+                    battery_level = int(battery_data)
+                else:
+                    # Clamp to valid range
+                    battery_level = max(0, min(100, int(battery_data)))
+                    
+                battery_level = max(0, min(100, battery_level))  # Final clamp between 0-100
+            except (ValueError, TypeError):
+                self.get_logger().warn(f"Invalid battery data from {robot_id}: {battery_data}")
+                return
+            
+            # Update battery status
+            self.battery_status[robot_id] = {
+                "level": battery_level,
+                "timestamp": time.time()
+            }
+            
+            # Log battery status
+            color_status = "🔴" if battery_level <= 40 else "🟡" if battery_level <= 60 else "🟢"
+            self.get_logger().info(f"🔋 {robot_id} Battery: {battery_level}% {color_status}")
+            
+            # Write to file for web access
+            self._update_battery_status_file()
+            
+        except Exception as e:
+            self.get_logger().error(f"Error handling battery status for {robot_id}: {e}")
+    
+    def _update_battery_status_file(self):
+        """Update battery status file for web to read"""
+        try:
+            battery_file_path = "/tmp/battery_status.json"
+            with open(battery_file_path, 'w') as f:
+                json.dump(self.battery_status, f)
+            
+        except Exception as e:
+            self.get_logger().error(f"Error updating battery status file: {e}")
     
     def stop_domain_bridge(self):
         """Stop domain bridge process"""

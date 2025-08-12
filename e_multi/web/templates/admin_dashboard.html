@@ -892,6 +892,176 @@
             from { opacity: 0; transform: scale(0.8); }
             to { opacity: 1; transform: scale(1); }
         }
+
+        /* Battery Status Styles */
+        .battery-status-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .battery-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .battery-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .battery-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .battery-robot-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .battery-icon {
+            font-size: 24px;
+        }
+
+        .battery-level {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+            margin-bottom: 5px;
+        }
+
+        .battery-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .battery-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--accent-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .battery-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+
+        .battery-fill.loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+            animation: batteryShimmer 2s infinite;
+        }
+
+        @keyframes batteryShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .battery-timestamp {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Battery Level Colors */
+        .battery-critical {
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        .battery-critical .battery-fill {
+            background: linear-gradient(90deg, var(--danger-color), #ff7979);
+        }
+
+        .battery-critical .battery-icon {
+            color: var(--danger-color);
+            animation: batteryBlink 1s infinite;
+        }
+
+        .battery-low {
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .battery-low .battery-fill {
+            background: linear-gradient(90deg, var(--warning-color), #ffe066);
+        }
+
+        .battery-low .battery-icon {
+            color: var(--warning-color);
+        }
+
+        .battery-medium {
+            color: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        .battery-medium .battery-fill {
+            background: linear-gradient(90deg, var(--info-color), #66d9aa);
+        }
+
+        .battery-medium .battery-icon {
+            color: var(--info-color);
+        }
+
+        .battery-good {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .battery-good .battery-fill {
+            background: linear-gradient(90deg, var(--success-color), #66d9aa);
+        }
+
+        .battery-good .battery-icon {
+            color: var(--success-color);
+        }
+
+        .battery-offline {
+            color: var(--text-muted);
+            border-color: var(--border-color);
+            opacity: 0.6;
+        }
+
+        .battery-offline .battery-fill {
+            background: var(--text-muted);
+        }
+
+        .battery-offline .battery-icon {
+            color: var(--text-muted);
+        }
+
+        @keyframes batteryBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
     </style>
 </head>
 <body>
@@ -988,6 +1158,35 @@
 
         <!-- Dashboard Section -->
         <div id="dashboard-section" class="section-content active">
+            <!-- Robot Battery Status -->
+            <div class="battery-status-container">
+                <div class="battery-card battery-offline" id="battery-dp09">
+                    <div class="battery-header">
+                        <i class="bi bi-battery battery-icon" id="battery-icon-dp09"></i>
+                        <div class="battery-robot-name">Robot DP_09</div>
+                    </div>
+                    <div class="battery-level" id="battery-level-dp09">--%</div>
+                    <div class="battery-label">Battery Level</div>
+                    <div class="battery-bar">
+                        <div class="battery-fill loading" id="battery-fill-dp09" style="width: 0%"></div>
+                    </div>
+                    <div class="battery-timestamp" id="battery-time-dp09">No data</div>
+                </div>
+                
+                <div class="battery-card battery-offline" id="battery-dp03">
+                    <div class="battery-header">
+                        <i class="bi bi-battery battery-icon" id="battery-icon-dp03"></i>
+                        <div class="battery-robot-name">Robot DP_03</div>
+                    </div>
+                    <div class="battery-level" id="battery-level-dp03">--%</div>
+                    <div class="battery-label">Battery Level</div>
+                    <div class="battery-bar">
+                        <div class="battery-fill loading" id="battery-fill-dp03" style="width: 0%"></div>
+                    </div>
+                    <div class="battery-timestamp" id="battery-time-dp03">No data</div>
+                </div>
+            </div>
+
             <!-- Key Metrics -->
             <div class="row metrics-row">
                 <div class="col-md-2">

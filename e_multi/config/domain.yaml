@@ -103,9 +103,9 @@ topics:
 
   /pinky_battery_present:
     type: std_msgs/msg/Float32
-    from_domain: 18
+    from_domain: 13
     to_domain: 129
-    remap: /DP_08/battery_present
+    remap: /DP_03/battery_present
 
   /pinky_battery_present:
     type: std_msgs/msg/Float32

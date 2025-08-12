@@ -347,8 +347,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // New data fetching and rendering for admin sections
+    // Global battery status cache
+    let batteryStatusCache = {};
+
+    async function fetchBatteryStatus() {
+        try {
+            const response = await fetch('/api/battery/status');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data) {
+                    batteryStatusCache = result.data;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch battery status:', error);
+        }
+    }
+
+    function getBatteryLevel(robotId) {
+        // Map robot database ID to battery topic ID
+        const batteryIdMap = {
+            8: 'DP_09',  // robot_1 (HANA PINKY)
+            9: 'DP_03'   // robot_2 (HANA ROBOT 9)
+        };
+        
+        const batteryId = batteryIdMap[robotId];
+        if (batteryId && batteryStatusCache[batteryId]) {
+            const batteryInfo = batteryStatusCache[batteryId];
+            const level = batteryInfo.level || 0;
+            
+            // Check if data is recent (within last 30 seconds)
+            const now = Date.now() / 1000;
+            const dataAge = now - (batteryInfo.timestamp || 0);
+            
+            return dataAge < 30 ? level : null;
+        }
+        return null;
+    }
+
+    function getBatteryStatusHtml(robotId, dbBattery) {
+        const realTimeBattery = getBatteryLevel(robotId);
+        const batteryLevel = realTimeBattery !== null ? realTimeBattery : (dbBattery || 0);
+        
+        let batteryClass = 'success';
+        let batteryIcon = '🟢';
+        
+        if (batteryLevel <= 20) {
+            batteryClass = 'danger';
+            batteryIcon = '🔴';
+        } else if (batteryLevel <= 40) {
+            batteryClass = 'warning'; 
+            batteryIcon = '🟡';
+        }
+        
+        const isRealTime = realTimeBattery !== null;
+        const statusIndicator = isRealTime ? ' ⚡' : ' 📁';
+        
+        return `<span class="status-badge ${batteryClass}" title="${isRealTime ? 'Real-time data' : 'Database data'}">${batteryIcon} ${batteryLevel}%${statusIndicator}</span>`;
+    }
+
     async function fetchRobots() {
         try {
+            // Fetch battery status first
+            await fetchBatteryStatus();
+            
             const response = await fetch('/api/admin/robots');
             if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             const result = await response.json();
@@ -364,12 +426,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td>${robot.id}</td>
                                 <td>${robot.name}</td>
                                 <td>${getStatusBadgeHtml(robot.status)}</td>
-                                <td>${robot.battery || 'N/A'}%</td>
+                                <td>${getBatteryStatusHtml(robot.id, robot.battery)}</td>
                                 <td>${robot.current_task ? `#${robot.current_task.task_id} (${robot.current_task.task_type})` : 'None'}</td>
                                 <td>${formatDateTime(robot.last_update)}</td>
                                 <td>
                                     <button class="action-icon-btn" onclick="resetRobot('${robot.id}')" title="Reset Robot"><i class="bi bi-arrow-clockwise"></i></button>
                                     <button class="action-icon-btn danger" onclick="emergencyStopRobot('${robot.id}')" title="Emergency Stop"><i class="bi bi-stop-circle"></i></button>
+                                    <button class="action-icon-btn" onclick="testBatteryLow(${robot.id})" title="Test Low Battery"><i class="bi bi-battery"></i></button>
+                                    <button class="action-icon-btn" onclick="testBatteryHigh(${robot.id})" title="Test High Battery"><i class="bi bi-battery-charging"></i></button>
                                 </td>
                             </tr>
                         `;
@@ -495,6 +559,137 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Battery status update function
+    async function updateBatteryCards() {
+        // Ensure DOM is fully loaded
+        if (document.readyState !== 'complete') {
+            console.log('🔋 DOM not ready, waiting...');
+            setTimeout(updateBatteryCards, 100);
+            return;
+        }
+        
+        try {
+            console.log('🔋 Fetching battery status...');
+            const response = await fetch('/api/battery/status');
+            if (!response.ok) {
+                console.warn('🔋 Battery API response not ok:', response.status);
+                return;
+            }
+            
+            const result = await response.json();
+            console.log('🔋 Battery API response:', result);
+            
+            if (result.success && result.data) {
+                const batteryData = result.data;
+                
+                // Update DP_09 battery card
+                if (batteryData.DP_09) {
+                    console.log('🔋 Updating DP_09 with:', batteryData.DP_09);
+                    updateBatteryCard('dp09', batteryData.DP_09);
+                }
+                
+                // Update DP_03 battery card  
+                if (batteryData.DP_03) {
+                    console.log('🔋 Updating DP_03 with:', batteryData.DP_03);
+                    updateBatteryCard('dp03', batteryData.DP_03);
+                }
+            } else {
+                console.warn('🔋 No battery data in response');
+            }
+        } catch (error) {
+            console.error('🔋 Failed to fetch battery status:', error);
+        }
+    }
+
+    function updateBatteryCard(robotId, batteryInfo) {
+        try {
+            const level = batteryInfo.level || 0;
+            const timestamp = batteryInfo.timestamp || 0;
+            
+            console.log(`🔋 Updating battery card for ${robotId}: ${level}% (${timestamp})`);
+            
+            // Update elements
+            const levelElement = document.getElementById(`battery-level-${robotId}`);
+            const fillElement = document.getElementById(`battery-fill-${robotId}`);
+            const timeElement = document.getElementById(`battery-time-${robotId}`);
+            const cardElement = document.getElementById(`battery-${robotId}`);
+            const iconElement = document.getElementById(`battery-icon-${robotId}`);
+            
+            // Debug: Check if elements exist
+            console.log(`🔋 Elements for ${robotId}:`, {
+                levelElement: !!levelElement,
+                fillElement: !!fillElement, 
+                timeElement: !!timeElement,
+                cardElement: !!cardElement,
+                iconElement: !!iconElement
+            });
+            
+            if (levelElement) {
+                levelElement.textContent = `${level}%`;
+                console.log(`🔋 Set level text: ${level}%`);
+            } else {
+                console.error(`🔋 Level element not found: battery-level-${robotId}`);
+            }
+            
+            if (fillElement) {
+                fillElement.style.width = `${level}%`;
+                // Remove loading class to stop shimmer animation
+                fillElement.classList.remove('loading');
+                console.log(`🔋 Set fill width: ${level}%, removed loading class`);
+            } else {
+                console.error(`🔋 Fill element not found: battery-fill-${robotId}`);
+            }
+        
+        // Update timestamp
+        if (timeElement) {
+            const now = Date.now() / 1000;
+            const dataAge = now - timestamp;
+            
+            if (dataAge < 30) {
+                timeElement.textContent = `Live (${new Date(timestamp * 1000).toLocaleTimeString()})`;
+            } else if (timestamp > 0) {
+                timeElement.textContent = `Last: ${new Date(timestamp * 1000).toLocaleTimeString()}`;
+            } else {
+                timeElement.textContent = 'No data';
+            }
+        }
+        
+        // Update card status class
+        if (cardElement) {
+            cardElement.classList.remove('battery-offline', 'battery-low', 'battery-medium', 'battery-high');
+            
+            if (level <= 0) {
+                cardElement.classList.add('battery-offline');
+            } else if (level <= 20) {
+                cardElement.classList.add('battery-low');
+            } else if (level <= 60) {
+                cardElement.classList.add('battery-medium');
+            } else {
+                cardElement.classList.add('battery-high');
+            }
+        }
+        
+        // Update icon
+        if (iconElement) {
+            iconElement.classList.remove('bi-battery', 'bi-battery-quarter', 'bi-battery-half', 'bi-battery-three-quarters', 'bi-battery-full');
+            
+            if (level <= 20) {
+                iconElement.classList.add('bi-battery');
+            } else if (level <= 40) {
+                iconElement.classList.add('bi-battery-quarter');
+            } else if (level <= 60) {
+                iconElement.classList.add('bi-battery-half');
+            } else if (level <= 80) {
+                iconElement.classList.add('bi-battery-three-quarters');
+            } else {
+                iconElement.classList.add('bi-battery-full');
+            }
+        }
+        } catch (error) {
+            console.error(`🔋 Error updating battery card for ${robotId}:`, error);
+        }
+    }
+
     // Global refresh function
     window.refreshData = () => {
         showNotification('Refreshing data...', 'info');
@@ -503,6 +698,50 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchTasks();
         fetchUsers();
         fetchItems();
+        updateBatteryCards();
+    };
+
+    // Battery test functions
+    window.testBatteryLevel = async (robotId, level) => {
+        try {
+            // Map database robot ID to battery topic ID
+            const batteryIdMap = {
+                8: 'DP_09',  // robot_1 (HANA PINKY)
+                9: 'DP_03'   // robot_2 (HANA ROBOT 9)
+            };
+            
+            const batteryTopicId = batteryIdMap[robotId];
+            if (!batteryTopicId) {
+                showNotification(`Invalid robot ID: ${robotId}`, 'error');
+                return;
+            }
+            
+            const response = await fetch(`/api/battery/test/${batteryTopicId}/${level}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification(`Battery test: ${batteryTopicId} set to ${level}%`, 'success');
+                setTimeout(refreshData, 1000); // Refresh to show updated battery
+            } else {
+                showNotification(`Battery test failed: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showNotification(`Battery test error: ${error.message}`, 'error');
+        }
+    };
+
+    window.testBatteryLow = (robotId) => {
+        if (confirm(`Test low battery (20%) for robot ${robotId}?`)) {
+            testBatteryLevel(robotId, 20);
+        }
+    };
+
+    window.testBatteryHigh = (robotId) => {
+        if (confirm(`Test high battery (85%) for robot ${robotId}?`)) {
+            testBatteryLevel(robotId, 85);
+        }
     };
 
     // Global control functions (placeholders for now)
@@ -1152,11 +1391,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function monitorSystemHealth() {
         try {
             const response = await fetch('/camera/health');
-            const health = await response.json();
+            const healthData = await response.json();
             
             // Check for any cameras that stopped unexpectedly
-            Object.keys(health.cameras).forEach(cameraId => {
-                const camera = health.cameras[cameraId];
+            Object.keys(healthData.cameras).forEach(cameraId => {
+                const camera = healthData.cameras[cameraId];
                 const wasActive = activeCameras[cameraId];
                 const isActive = camera.active;
                 
@@ -1170,7 +1409,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // Check system bandwidth
-            if (health.total_bandwidth > 10) { // Alert if over 10 Mbps 
+            if (healthData.total_bandwidth > 10) { // Alert if over 10 Mbps 
                 showNotification('High bandwidth usage detected', 'warning');
             }
             
@@ -1208,7 +1447,11 @@ document.addEventListener('DOMContentLoaded', () => {
         initCharts();
         showSection('dashboard'); // Start with dashboard section
         refreshData();
-        updateInterval = setInterval(refreshData, 10000); // Auto-refresh every 10 seconds
+        updateBatteryCards(); // Initial battery card update
+        updateInterval = setInterval(() => {
+            refreshData();
+            updateBatteryCards(); // Update battery cards periodically
+        }, 10000); // Auto-refresh every 10 seconds
     }
 
     window.addEventListener('beforeunload', () => {
@@ -1442,8 +1685,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function playAlertSound() {
         try {
-            // Create audio context for alert sound
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Create audio context for alert sound - handle browser compatibility
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) {
+                console.log('Web Audio API not supported');
+                return;
+            }
+            
+            const audioContext = new AudioCtx();
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
