@@ -314,7 +314,7 @@ class AdvancedPositionController(Node):
         self.target_yaw = self.get_parameter('target_yaw').value
         
         # Control thresholds
-        self.declare_parameter('position_tolerance', 0.01)
+        self.declare_parameter('position_tolerance', 0.015)
         self.declare_parameter('angle_tolerance', 0.05)
         self.position_tolerance = self.get_parameter('position_tolerance').value
         self.angle_tolerance = self.get_parameter('angle_tolerance').value

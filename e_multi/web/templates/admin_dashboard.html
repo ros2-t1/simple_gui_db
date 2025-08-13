@@ -888,6 +888,213 @@
             border-color: var(--success-color);
         }
 
+        /* Robot Details Modal Specific Styles */
+        #robot-details-modal .fall-alert-modal-content {
+            max-width: 700px;
+            width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            text-align: left;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+        }
+
+        #robot-details-modal .fall-alert-modal-title {
+            color: var(--text-primary);
+            text-transform: none;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #robot-details-content h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        #robot-details-content h4 i {
+            color: var(--info-color);
+        }
+
+        /* Robot Status Classes */
+        .robot-card-status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .robot-card-status.online {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .robot-card-status.offline {
+            background: var(--text-muted);
+            color: white;
+        }
+
+        .robot-card-status.busy {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .robot-card-status.idle {
+            background: var(--info-color);
+            color: white;
+        }
+
+        .robot-card-status.critical {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .robot-card-status.good {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .robot-card-status.fair {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        /* Modal action buttons */
+        .modal-robot-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .modal-robot-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .modal-robot-btn.control {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .modal-robot-btn.control:hover {
+            background: #e0a800;
+        }
+
+        .modal-robot-btn.emergency {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .modal-robot-btn.emergency:hover {
+            background: #cc0000;
+        }
+
+        .modal-robot-btn.close {
+            background: var(--accent-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-robot-btn.close:hover {
+            background: var(--border-color);
+        }
+
+        /* Modal content section styling */
+        #robot-details-content {
+            color: var(--text-primary);
+        }
+
+        #robot-details-content > div {
+            background: var(--card-bg) !important;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        #robot-details-content h4 {
+            color: var(--text-primary);
+            background: var(--accent-bg);
+            margin: -20px -20px 15px -20px;
+            padding: 12px 20px;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #robot-details-content .robot-card-status {
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        /* Grid layout fixes for modal content */
+        #robot-details-content div[style*="grid-template-columns"] {
+            display: grid !important;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        #robot-details-content div[style*="grid-template-columns"] > div {
+            background: var(--accent-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 6px !important;
+            padding: 8px 12px !important;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        #robot-details-content div[style*="grid-template-columns"] > div strong {
+            color: var(--text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* Special styling for task section */
+        #robot-details-content div[style*="background: var(--card-bg)"] {
+            background: var(--accent-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
+        }
+
+        /* No task message styling */
+        #robot-details-content div[style*="text-align: center"][style*="color: var(--text-muted)"] {
+            background: var(--accent-bg) !important;
+            border: 2px dashed var(--border-color) !important;
+            color: var(--text-muted) !important;
+        }
+
+        /* Health status rows */
+        #robot-details-content div[style*="display: flex"][style*="justify-content: space-between"] {
+            background: var(--accent-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 6px !important;
+            padding: 10px 12px !important;
+            margin-bottom: 8px;
+        }
+
+        #robot-details-content div[style*="display: flex"][style*="justify-content: space-between"]:last-child {
+            margin-bottom: 0;
+        }
+
         @keyframes modalAppear {
             from { opacity: 0; transform: scale(0.8); }
             to { opacity: 1; transform: scale(1); }
@@ -916,6 +1123,11 @@
         .battery-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .battery-card.updating {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(0, 170, 255, 0.3);
         }
 
         .battery-header {
@@ -1169,6 +1381,655 @@
         .control-panel[style*="border-color: var(--danger-color)"] .chart-title {
             color: var(--danger-color);
         }
+
+        /* Individual Robot Cards */
+        .robot-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            height: 100%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .robot-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            border-color: var(--info-color);
+        }
+
+        .robot-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .robot-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .robot-card-title .robot-icon {
+            font-size: 24px;
+            color: var(--info-color);
+        }
+
+        .robot-card-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .robot-card-id {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--accent-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .robot-card-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .robot-card-status.online {
+            background: rgba(81, 207, 102, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .robot-card-status.busy {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--warning-color);
+            border: 1px solid var(--warning-color);
+        }
+
+        .robot-card-status.offline {
+            background: rgba(136, 136, 136, 0.2);
+            color: var(--text-muted);
+            border: 1px solid var(--text-muted);
+        }
+
+        .robot-card-status.error {
+            background: rgba(255, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .robot-card-content {
+            display: grid;
+            gap: 12px;
+        }
+
+        .robot-card-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .robot-card-metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .robot-card-metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .robot-card-battery {
+            margin: 8px 0;
+        }
+
+        .robot-card-battery-bar {
+            width: 100%;
+            height: 5px;
+            background: var(--accent-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+
+        .robot-card-battery-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+
+        .robot-card-battery-fill.critical {
+            background: linear-gradient(90deg, var(--danger-color), #ff7979);
+        }
+
+        .robot-card-battery-fill.low {
+            background: linear-gradient(90deg, var(--warning-color), #ffe066);
+        }
+
+        .robot-card-battery-fill.medium {
+            background: linear-gradient(90deg, var(--info-color), #66d9aa);
+        }
+
+        .robot-card-battery-fill.good {
+            background: linear-gradient(90deg, var(--success-color), #66d9aa);
+        }
+
+        .robot-card-task {
+            background: var(--accent-bg);
+            border-radius: 5px;
+            padding: 8px 10px;
+            margin: 8px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .robot-card-task-title {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 3px;
+            letter-spacing: 0.5px;
+        }
+
+        .robot-card-task-content {
+            font-size: 12px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .robot-card-actions {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        .robot-card-action {
+            background: var(--accent-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 5px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .robot-card-action:hover {
+            background: var(--info-color);
+            color: white;
+            border-color: var(--info-color);
+            transform: translateY(-1px);
+        }
+
+        .robot-card-action.danger:hover {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        /* Robot Card Status-based Styling */
+        .robot-card.idle {
+            border-left: 4px solid var(--success-color);
+            background: linear-gradient(135deg, var(--card-bg) 0%, rgba(81, 207, 102, 0.05) 100%);
+        }
+        
+        .robot-card.busy {
+            border-left: 4px solid var(--warning-color);
+            background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 170, 0, 0.05) 100%);
+            animation: busyPulse 2s infinite;
+        }
+        
+        .robot-card.offline {
+            border-left: 4px solid var(--text-muted);
+            background: linear-gradient(135deg, var(--card-bg) 0%, rgba(136, 136, 136, 0.05) 100%);
+            opacity: 0.7;
+        }
+        
+        .robot-card.error {
+            border-left: 4px solid var(--danger-color);
+            background: linear-gradient(135deg, var(--card-bg) 0%, rgba(255, 68, 68, 0.05) 100%);
+            animation: errorBlink 1s infinite;
+        }
+        
+        /* Fix text visibility in dark theme */
+        .robot-card.idle .robot-card-name,
+        .robot-card.idle .robot-card-id,
+        .robot-card.idle .robot-card-metric-label,
+        .robot-card.idle .robot-card-metric-value,
+        .robot-card.idle .robot-card-metric-content {
+            color: var(--text-primary) !important;
+        }
+        
+        .robot-card.busy .robot-card-name,
+        .robot-card.busy .robot-card-id,
+        .robot-card.busy .robot-card-metric-label,
+        .robot-card.busy .robot-card-metric-value,
+        .robot-card.busy .robot-card-metric-content {
+            color: var(--text-primary) !important;
+        }
+        
+        .robot-card.offline .robot-card-name,
+        .robot-card.offline .robot-card-id,
+        .robot-card.offline .robot-card-metric-label,
+        .robot-card.offline .robot-card-metric-value,
+        .robot-card.offline .robot-card-metric-content {
+            color: var(--text-muted) !important;
+        }
+        
+        .robot-card.error .robot-card-name,
+        .robot-card.error .robot-card-id,
+        .robot-card.error .robot-card-metric-label,
+        .robot-card.error .robot-card-metric-value,
+        .robot-card.error .robot-card-metric-content {
+            color: var(--text-primary) !important;
+        }
+        
+        @keyframes busyPulse {
+            0%, 100% { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            50% { box-shadow: 0 4px 20px rgba(255, 170, 0, 0.3); }
+        }
+        
+        @keyframes errorBlink {
+            0%, 100% { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            50% { box-shadow: 0 4px 20px rgba(255, 68, 68, 0.4); }
+        }
+        
+        /* Robot Card Status Icons */
+        .robot-card.idle .robot-card-icon {
+            color: var(--success-color);
+        }
+        
+        .robot-card.busy .robot-card-icon {
+            color: var(--warning-color);
+        }
+        
+        .robot-card.offline .robot-card-icon {
+            color: var(--text-muted);
+        }
+        
+        .robot-card.error .robot-card-icon {
+            color: var(--danger-color);
+        }
+
+        /* Chart content styling */
+        .chart-content {
+            position: relative;
+            height: 200px;
+            padding: 15px;
+        }
+
+        .chart-content canvas {
+            max-height: 100%;
+        }
+
+        /* Robot table toggle */
+        .table-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .table-toggle:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .chevron-icon {
+            transition: transform 0.2s ease;
+        }
+
+        .chevron-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
+        #robot-detailed-table {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        /* Robot Table Enhancement - Dashboard Style */
+        .table {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        .table thead th {
+            background: var(--accent-bg);
+            border-bottom: 2px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 15px 12px;
+            vertical-align: middle;
+        }
+
+        .table tbody tr {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background: var(--accent-bg);
+            transform: translateY(-0.5px);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+        }
+
+        .table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .table tbody td {
+            padding: 16px 12px;
+            vertical-align: middle;
+            color: var(--text-primary) !important;
+            font-size: 13px;
+        }
+        
+        /* Force dark theme colors for table */
+        #robot-detailed-table .table {
+            background: var(--card-bg) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        #robot-detailed-table .table tbody tr {
+            background: var(--card-bg) !important;
+        }
+        
+        #robot-detailed-table .table tbody tr:hover {
+            background: var(--accent-bg) !important;
+        }
+        
+        #robot-detailed-table .table tbody td {
+            color: var(--text-primary) !important;
+            background: transparent !important;
+        }
+        
+        #robot-detailed-table .table thead th {
+            background: var(--accent-bg) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        /* Force colors for table elements */
+        #robot-detailed-table .robot-id,
+        #robot-detailed-table .robot-name,
+        #robot-detailed-table .task-id,
+        #robot-detailed-table .last-update,
+        #robot-detailed-table .no-task {
+            color: var(--text-primary) !important;
+        }
+        
+        #robot-detailed-table .text-muted {
+            color: var(--text-muted) !important;
+        }
+        
+        #robot-detailed-table .action-icon-btn {
+            background: var(--accent-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-secondary) !important;
+        }
+        
+        #robot-detailed-table .action-icon-btn:hover {
+            background: var(--info-color) !important;
+            color: white !important;
+        }
+
+        /* Robot Status Badge in Table */
+        .table .robot-status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .table .robot-status-badge.online {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .table .robot-status-badge.idle {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info-color);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .table .robot-status-badge.busy {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .table .robot-status-badge.offline {
+            background: rgba(107, 114, 128, 0.2);
+            color: var(--text-muted);
+            border: 1px solid rgba(107, 114, 128, 0.3);
+        }
+
+        /* Battery Progress Bar in Table */
+        .table .battery-progress {
+            width: 60px;
+            height: 8px;
+            background: var(--accent-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+
+        .table .battery-progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .table .battery-progress-fill.critical {
+            background: linear-gradient(90deg, var(--danger-color), #ff7979);
+        }
+
+        .table .battery-progress-fill.low {
+            background: linear-gradient(90deg, var(--warning-color), #fbbf24);
+        }
+
+        .table .battery-progress-fill.medium {
+            background: linear-gradient(90deg, var(--info-color), #60a5fa);
+        }
+
+        .table .battery-progress-fill.good {
+            background: linear-gradient(90deg, var(--success-color), #34d399);
+        }
+
+        .table .battery-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        /* Action buttons in table */
+        .table .action-icon-btn {
+            background: var(--accent-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .table .action-icon-btn:hover {
+            background: var(--info-color);
+            color: white;
+            border-color: var(--info-color);
+            transform: translateY(-1px);
+        }
+
+        .table .action-icon-btn.danger:hover {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        /* Robot ID styling */
+        .table .robot-id {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .table .robot-name {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Task info in table */
+        .table .task-info {
+            font-size: 12px;
+        }
+
+        .table .task-id {
+            color: var(--info-color);
+            font-weight: 600;
+        }
+
+        .table .no-task {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Last update time styling */
+        .table .last-update {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Missing CSS classes for robot table */
+        .table .battery-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .table .no-task {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        /* Status badge compatibility - unify status-badge and robot-status-badge */
+        .table .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .table .status-badge.idle,
+        .table .status-badge.pending {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info-color);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .table .status-badge.busy,
+        .table .status-badge.assigned,
+        .table .status-badge.in_progress {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .table .status-badge.error,
+        .table .status-badge.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .table .status-badge.success,
+        .table .status-badge.completed {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .table .status-badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .table .status-badge.danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+
+        /* Table container improvements */
+        .table-responsive {
+            background: transparent;
+            border-radius: 12px;
+        }
+
+        /* Section title improvements for robots */
+        .robots-section .d-flex.justify-content-between.align-items-center {
+            background: var(--accent-bg);
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .robots-section .table-responsive {
+            border-radius: 0 0 8px 8px;
+        }
     </style>
 </head>
 <body>
@@ -1205,6 +2066,36 @@
                 </button>
                 <button class="fall-alert-modal-btn secondary" onclick="testFallAlert()">
                     <i class="bi bi-gear"></i> Test Alert
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Robot Details Modal -->
+    <div id="robot-details-modal" class="fall-alert-modal">
+        <div class="fall-alert-modal-content" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="fall-alert-modal-title" style="color: var(--info-color); margin: 0;">
+                    <i class="bi bi-robot"></i> <span id="robot-details-name">Robot Details</span>
+                </h2>
+                <button onclick="closeRobotDetailsModal()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            
+            <div id="robot-details-content" style="text-align: left;">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            
+            <div class="fall-alert-modal-actions" style="margin-top: 25px;">
+                <button class="fall-alert-modal-btn secondary" onclick="controlRobotFromModal('reset')" id="robot-modal-reset-btn">
+                    <i class="bi bi-arrow-clockwise"></i> Reset Robot
+                </button>
+                <button class="fall-alert-modal-btn primary" onclick="controlRobotFromModal('stop')" id="robot-modal-stop-btn" style="background: var(--danger-color);">
+                    <i class="bi bi-stop-circle"></i> Emergency Stop
+                </button>
+                <button class="fall-alert-modal-btn secondary" onclick="closeRobotDetailsModal()">
+                    <i class="bi bi-x-circle"></i> Close
                 </button>
             </div>
         </div>
@@ -1720,29 +2611,124 @@
 
         <!-- Robots Section -->
         <div id="robots-section" class="section-content">
-            <div class="data-table-container">
-                <div class="table-header">
-                    <div class="table-title">
-                        <i class="bi bi-robot"></i>
-                        Robot Status Overview
+            <!-- Fleet Overview Cards -->
+            <div class="row mb-3">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="fleet-total-robots">0</div>
+                            <div class="metric-label">Total Robots</div>
+                            <div class="metric-change positive" id="fleet-robots-online">0 Online</div>
+                        </div>
                     </div>
                 </div>
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Status</th>
-                            <th>Battery</th>
-                            <th>Current Task</th>
-                            <th>Last Update</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="robots-table-body">
-                        <tr><td colspan="7" class="text-center">Loading robots...</td></tr>
-                    </tbody>
-                </table>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #007bff, #0056b3);">
+                            <i class="bi bi-gear-fill"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="fleet-active-tasks">0</div>
+                            <div class="metric-label">Active Tasks</div>
+                            <div class="metric-change" id="fleet-task-efficiency">0% Efficiency</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+                            <i class="bi bi-battery-half"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="fleet-avg-battery">0%</div>
+                            <div class="metric-label">Avg Battery</div>
+                            <div class="metric-change" id="fleet-battery-status">Normal</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="metric-content">
+                            <div class="metric-value" id="fleet-alerts">0</div>
+                            <div class="metric-label">Alerts</div>
+                            <div class="metric-change negative" id="fleet-alert-status">All Clear</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Individual Robot Cards -->
+            <div class="row mb-3" id="robot-cards-container">
+                <!-- Robot cards will be dynamically inserted here -->
+            </div>
+
+            <!-- Robot Performance Charts -->
+            <div class="row mb-3">
+                <div class="col-lg-6 mb-3">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="bi bi-bar-chart"></i>
+                                Robot Performance Score
+                            </div>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="robotPerformanceChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-3">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <i class="bi bi-battery-charging"></i>
+                                Battery Level Timeline (24h)
+                            </div>
+                        </div>
+                        <div class="chart-content">
+                            <canvas id="batteryTimelineChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Robot Table (Collapsed by default) -->
+            <div class="data-table-container mt-2">
+                <div class="table-header" style="cursor: pointer;" onclick="toggleRobotTable()">
+                    <div class="table-title">
+                        <i class="bi bi-table"></i>
+                        Detailed Robot Information
+                        <i class="bi bi-chevron-down" id="robot-table-chevron" style="margin-left: 10px;"></i>
+                    </div>
+                </div>
+                <div id="robot-detailed-table" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Battery</th>
+                                    <th>Current Task</th>
+                                    <th>Performance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="robots-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Loading robot data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1752,25 +2738,22 @@
                 <div class="table-header">
                     <div class="table-title">
                         <i class="bi bi-list-task"></i>
-                        All Tasks
+                        Task Management
                     </div>
                 </div>
                 <table class="admin-table">
                     <thead>
                         <tr>
                             <th>Task ID</th>
-                            <th>Type</th>
                             <th>Status</th>
                             <th>Requester</th>
                             <th>Item</th>
-                            <th>Assigned Robot</th>
-                            <th>Created At</th>
-                            <th>Completed At</th>
-                            <th>Actions</th>
+                            <th>Robot</th>
+                            <th>Created</th>
                         </tr>
                     </thead>
                     <tbody id="tasks-table-body">
-                        <tr><td colspan="9" class="text-center">Loading tasks...</td></tr>
+                        <tr><td colspan="6" class="text-center">Loading tasks...</td></tr>
                     </tbody>
                 </table>
             </div>

@@ -22,8 +22,8 @@ SERVICE_PARKING_YAW = -1.57          # Final orientation at service stations (ra
 # Room-specific parking coordinates
 # Key: location_name from DB, Value: [x, y] parking coordinates
 SERVICE_PARKING_COORDS = {
-    "ROOM1": [-0.05, 0.75, -1.57],    # Room 1 precise parking position (DB: ROOM1)
-    "ROOM2": [0.35, 0.75, -1.57],    # Room 2 precise parking position (DB: ROOM2)
+    "ROOM1": [-0.05, 0.75, -3.14],    # Room 1 precise parking position (DB: ROOM1)
+    "ROOM2": [0.35, 0.75, 3.14],    # Room 2 precise parking position (DB: ROOM2)
     # Add more rooms as needed (must match location_name in DB exactly)
 }
 
